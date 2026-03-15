@@ -24286,6 +24286,17 @@ var LocalDB = class {
 		if (this.get("origins").length === 0) this.set("origins", INITIAL_ORIGINS);
 		if (!localStorage.getItem("crm_users")) this.set("users", []);
 		if (!localStorage.getItem("crm_leads")) this.set("leads", []);
+		const users = this.get("users");
+		if (!users.find((u) => u.email === "drvictorhugoveiga@gmail.com")) {
+			const defaultUser = {
+				id: crypto.randomUUID(),
+				name: "Dr. Victor Hugo Veiga",
+				email: "drvictorhugoveiga@gmail.com",
+				password: "Geriatria@6d",
+				created_at: (/* @__PURE__ */ new Date()).toISOString()
+			};
+			this.set("users", [...users, defaultUser]);
+		}
 	}
 	async signup(name, email, password) {
 		await new Promise((r) => setTimeout(r, 600));
@@ -26357,44 +26368,40 @@ var Chat = () => {
 //#endregion
 //#region src/pages/NotFound.tsx
 var NotFound = () => {
-	const location = useLocation();
-	(0, import_react.useEffect)(() => {
-		console.error("404 Error: User attempted to access non-existent route:", location.pathname);
-	}, [location.pathname]);
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-		"data-uid": "src/pages/NotFound.tsx:13:5",
+		"data-uid": "src/pages/NotFound.tsx:6:5",
 		"data-prohibitions": "[]",
 		className: "min-h-screen flex items-center justify-center bg-slate-50 p-4",
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			"data-uid": "src/pages/NotFound.tsx:14:7",
+			"data-uid": "src/pages/NotFound.tsx:7:7",
 			"data-prohibitions": "[]",
 			className: "text-center max-w-md w-full bg-white p-8 rounded-2xl shadow-sm border border-slate-100",
 			children: [
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-					"data-uid": "src/pages/NotFound.tsx:15:9",
+					"data-uid": "src/pages/NotFound.tsx:8:9",
 					"data-prohibitions": "[]",
 					className: "text-6xl font-bold text-slate-800 mb-4",
 					children: "404"
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
-					"data-uid": "src/pages/NotFound.tsx:16:9",
+					"data-uid": "src/pages/NotFound.tsx:9:9",
 					"data-prohibitions": "[]",
 					className: "text-2xl font-semibold text-slate-700 mb-2",
 					children: "Página não encontrada"
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-					"data-uid": "src/pages/NotFound.tsx:17:9",
+					"data-uid": "src/pages/NotFound.tsx:10:9",
 					"data-prohibitions": "[]",
 					className: "text-slate-500 mb-8",
 					children: "A página que você está procurando não existe ou foi movida."
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-					"data-uid": "src/pages/NotFound.tsx:20:9",
+					"data-uid": "src/pages/NotFound.tsx:13:9",
 					"data-prohibitions": "[]",
 					asChild: true,
 					className: "w-full",
 					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
-						"data-uid": "src/pages/NotFound.tsx:21:11",
+						"data-uid": "src/pages/NotFound.tsx:14:11",
 						"data-prohibitions": "[]",
 						to: "/",
 						children: "Voltar para o Início"
@@ -39513,4 +39520,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BrowserRouter, {
 }));
 //#endregion
 
-//# sourceMappingURL=index-Cj44MuTf.js.map
+//# sourceMappingURL=index-B9gxnUP5.js.map

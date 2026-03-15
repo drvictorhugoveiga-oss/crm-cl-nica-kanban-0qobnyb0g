@@ -32,6 +32,18 @@ class LocalDB {
     }
     if (!localStorage.getItem('crm_users')) this.set('users', [])
     if (!localStorage.getItem('crm_leads')) this.set('leads', [])
+
+    const users = this.get<User>('users')
+    if (!users.find((u) => u.email === 'drvictorhugoveiga@gmail.com')) {
+      const defaultUser: User = {
+        id: crypto.randomUUID(),
+        name: 'Dr. Victor Hugo Veiga',
+        email: 'drvictorhugoveiga@gmail.com',
+        password: 'Geriatria@6d',
+        created_at: new Date().toISOString(),
+      }
+      this.set('users', [...users, defaultUser])
+    }
   }
 
   async signup(name: string, email: string, password: string): Promise<User> {
