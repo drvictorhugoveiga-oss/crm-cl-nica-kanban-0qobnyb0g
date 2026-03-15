@@ -31889,11 +31889,19 @@ var signupSchema = object({
 function Login() {
 	const [isLogin, setIsLogin] = (0, import_react.useState)(true);
 	const [isLoading, setIsLoading] = (0, import_react.useState)(false);
-	const { login } = useAuthStore();
+	const { login, user, isLoading: isAuthLoading } = useAuthStore();
 	const navigate = useNavigate();
 	const location = useLocation();
 	const { toast } = useToast();
 	const from = location.state?.from?.pathname || "/";
+	(0, import_react.useEffect)(() => {
+		if (user && !isAuthLoading) navigate(from, { replace: true });
+	}, [
+		user,
+		isAuthLoading,
+		navigate,
+		from
+	]);
 	const loginForm = useForm({
 		resolver: a(loginSchema),
 		defaultValues: {
@@ -31941,38 +31949,49 @@ function Login() {
 			setIsLoading(false);
 		}
 	};
+	if (isAuthLoading) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		"data-uid": "src/pages/Login.tsx:88:7",
+		"data-prohibitions": "[]",
+		className: "min-h-screen flex items-center justify-center bg-slate-50 p-4",
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			"data-uid": "src/pages/Login.tsx:89:9",
+			"data-prohibitions": "[]",
+			className: "text-slate-500",
+			children: "Carregando..."
+		})
+	});
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-		"data-uid": "src/pages/Login.tsx:81:5",
+		"data-uid": "src/pages/Login.tsx:95:5",
 		"data-prohibitions": "[editContent]",
 		className: "min-h-screen flex items-center justify-center bg-slate-50 p-4",
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			"data-uid": "src/pages/Login.tsx:82:7",
+			"data-uid": "src/pages/Login.tsx:96:7",
 			"data-prohibitions": "[editContent]",
 			className: "w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-100 p-8",
 			children: [
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/pages/Login.tsx:83:9",
+					"data-uid": "src/pages/Login.tsx:97:9",
 					"data-prohibitions": "[editContent]",
 					className: "flex flex-col items-center mb-8",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							"data-uid": "src/pages/Login.tsx:84:11",
+							"data-uid": "src/pages/Login.tsx:98:11",
 							"data-prohibitions": "[]",
 							className: "h-12 w-12 rounded-xl bg-primary flex items-center justify-center mb-4",
 							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Activity, {
-								"data-uid": "src/pages/Login.tsx:85:13",
+								"data-uid": "src/pages/Login.tsx:99:13",
 								"data-prohibitions": "[editContent]",
 								className: "h-7 w-7 text-primary-foreground"
 							})
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
-							"data-uid": "src/pages/Login.tsx:87:11",
+							"data-uid": "src/pages/Login.tsx:101:11",
 							"data-prohibitions": "[editContent]",
 							className: "text-2xl font-bold text-slate-800",
 							children: isLogin ? "Bem-vindo de volta" : "Crie sua conta"
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-							"data-uid": "src/pages/Login.tsx:90:11",
+							"data-uid": "src/pages/Login.tsx:104:11",
 							"data-prohibitions": "[editContent]",
 							className: "text-slate-500 mt-2 text-sm text-center",
 							children: isLogin ? "Acesse o ClinicFlow para gerenciar seus pacientes." : "Comece a gerenciar seus leads de forma inteligente."
@@ -31980,65 +31999,65 @@ function Login() {
 					]
 				}),
 				isLogin ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Form, {
-					"data-uid": "src/pages/Login.tsx:98:11",
+					"data-uid": "src/pages/Login.tsx:112:11",
 					"data-prohibitions": "[editContent]",
 					...loginForm,
 					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
-						"data-uid": "src/pages/Login.tsx:99:13",
+						"data-uid": "src/pages/Login.tsx:113:13",
 						"data-prohibitions": "[editContent]",
 						onSubmit: loginForm.handleSubmit(onLogin),
 						className: "space-y-4",
 						children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-								"data-uid": "src/pages/Login.tsx:100:15",
+								"data-uid": "src/pages/Login.tsx:114:15",
 								"data-prohibitions": "[editContent]",
 								control: loginForm.control,
 								name: "email",
 								render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
-									"data-uid": "src/pages/Login.tsx:104:19",
+									"data-uid": "src/pages/Login.tsx:118:19",
 									"data-prohibitions": "[]",
 									children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-											"data-uid": "src/pages/Login.tsx:105:21",
+											"data-uid": "src/pages/Login.tsx:119:21",
 											"data-prohibitions": "[]",
 											children: "E-mail"
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, {
-											"data-uid": "src/pages/Login.tsx:106:21",
+											"data-uid": "src/pages/Login.tsx:120:21",
 											"data-prohibitions": "[]",
 											children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-												"data-uid": "src/pages/Login.tsx:107:23",
+												"data-uid": "src/pages/Login.tsx:121:23",
 												"data-prohibitions": "[editContent]",
 												placeholder: "seu@email.com",
 												...field
 											})
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {
-											"data-uid": "src/pages/Login.tsx:109:21",
+											"data-uid": "src/pages/Login.tsx:123:21",
 											"data-prohibitions": "[editContent]"
 										})
 									]
 								})
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-								"data-uid": "src/pages/Login.tsx:113:15",
+								"data-uid": "src/pages/Login.tsx:127:15",
 								"data-prohibitions": "[editContent]",
 								control: loginForm.control,
 								name: "password",
 								render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
-									"data-uid": "src/pages/Login.tsx:117:19",
+									"data-uid": "src/pages/Login.tsx:131:19",
 									"data-prohibitions": "[]",
 									children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-											"data-uid": "src/pages/Login.tsx:118:21",
+											"data-uid": "src/pages/Login.tsx:132:21",
 											"data-prohibitions": "[]",
 											children: "Senha"
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, {
-											"data-uid": "src/pages/Login.tsx:119:21",
+											"data-uid": "src/pages/Login.tsx:133:21",
 											"data-prohibitions": "[]",
 											children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-												"data-uid": "src/pages/Login.tsx:120:23",
+												"data-uid": "src/pages/Login.tsx:134:23",
 												"data-prohibitions": "[editContent]",
 												type: "password",
 												placeholder: "••••••••",
@@ -32046,14 +32065,14 @@ function Login() {
 											})
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {
-											"data-uid": "src/pages/Login.tsx:122:21",
+											"data-uid": "src/pages/Login.tsx:136:21",
 											"data-prohibitions": "[editContent]"
 										})
 									]
 								})
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-								"data-uid": "src/pages/Login.tsx:126:15",
+								"data-uid": "src/pages/Login.tsx:140:15",
 								"data-prohibitions": "[editContent]",
 								type: "submit",
 								className: "w-full",
@@ -32063,96 +32082,96 @@ function Login() {
 						]
 					})
 				}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Form, {
-					"data-uid": "src/pages/Login.tsx:132:11",
+					"data-uid": "src/pages/Login.tsx:146:11",
 					"data-prohibitions": "[editContent]",
 					...signupForm,
 					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
-						"data-uid": "src/pages/Login.tsx:133:13",
+						"data-uid": "src/pages/Login.tsx:147:13",
 						"data-prohibitions": "[editContent]",
 						onSubmit: signupForm.handleSubmit(onSignup),
 						className: "space-y-4",
 						children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-								"data-uid": "src/pages/Login.tsx:134:15",
+								"data-uid": "src/pages/Login.tsx:148:15",
 								"data-prohibitions": "[editContent]",
 								control: signupForm.control,
 								name: "name",
 								render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
-									"data-uid": "src/pages/Login.tsx:138:19",
+									"data-uid": "src/pages/Login.tsx:152:19",
 									"data-prohibitions": "[]",
 									children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-											"data-uid": "src/pages/Login.tsx:139:21",
+											"data-uid": "src/pages/Login.tsx:153:21",
 											"data-prohibitions": "[]",
 											children: "Nome completo"
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, {
-											"data-uid": "src/pages/Login.tsx:140:21",
+											"data-uid": "src/pages/Login.tsx:154:21",
 											"data-prohibitions": "[]",
 											children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-												"data-uid": "src/pages/Login.tsx:141:23",
+												"data-uid": "src/pages/Login.tsx:155:23",
 												"data-prohibitions": "[editContent]",
 												placeholder: "Dr. João da Silva",
 												...field
 											})
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {
-											"data-uid": "src/pages/Login.tsx:143:21",
+											"data-uid": "src/pages/Login.tsx:157:21",
 											"data-prohibitions": "[editContent]"
 										})
 									]
 								})
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-								"data-uid": "src/pages/Login.tsx:147:15",
+								"data-uid": "src/pages/Login.tsx:161:15",
 								"data-prohibitions": "[editContent]",
 								control: signupForm.control,
 								name: "email",
 								render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
-									"data-uid": "src/pages/Login.tsx:151:19",
+									"data-uid": "src/pages/Login.tsx:165:19",
 									"data-prohibitions": "[]",
 									children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-											"data-uid": "src/pages/Login.tsx:152:21",
+											"data-uid": "src/pages/Login.tsx:166:21",
 											"data-prohibitions": "[]",
 											children: "E-mail"
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, {
-											"data-uid": "src/pages/Login.tsx:153:21",
+											"data-uid": "src/pages/Login.tsx:167:21",
 											"data-prohibitions": "[]",
 											children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-												"data-uid": "src/pages/Login.tsx:154:23",
+												"data-uid": "src/pages/Login.tsx:168:23",
 												"data-prohibitions": "[editContent]",
 												placeholder: "seu@email.com",
 												...field
 											})
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {
-											"data-uid": "src/pages/Login.tsx:156:21",
+											"data-uid": "src/pages/Login.tsx:170:21",
 											"data-prohibitions": "[editContent]"
 										})
 									]
 								})
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormField, {
-								"data-uid": "src/pages/Login.tsx:160:15",
+								"data-uid": "src/pages/Login.tsx:174:15",
 								"data-prohibitions": "[editContent]",
 								control: signupForm.control,
 								name: "password",
 								render: ({ field }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(FormItem, {
-									"data-uid": "src/pages/Login.tsx:164:19",
+									"data-uid": "src/pages/Login.tsx:178:19",
 									"data-prohibitions": "[]",
 									children: [
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormLabel, {
-											"data-uid": "src/pages/Login.tsx:165:21",
+											"data-uid": "src/pages/Login.tsx:179:21",
 											"data-prohibitions": "[]",
 											children: "Senha"
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormControl, {
-											"data-uid": "src/pages/Login.tsx:166:21",
+											"data-uid": "src/pages/Login.tsx:180:21",
 											"data-prohibitions": "[]",
 											children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
-												"data-uid": "src/pages/Login.tsx:167:23",
+												"data-uid": "src/pages/Login.tsx:181:23",
 												"data-prohibitions": "[editContent]",
 												type: "password",
 												placeholder: "••••••••",
@@ -32160,14 +32179,14 @@ function Login() {
 											})
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FormMessage, {
-											"data-uid": "src/pages/Login.tsx:169:21",
+											"data-uid": "src/pages/Login.tsx:183:21",
 											"data-prohibitions": "[editContent]"
 										})
 									]
 								})
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
-								"data-uid": "src/pages/Login.tsx:173:15",
+								"data-uid": "src/pages/Login.tsx:187:15",
 								"data-prohibitions": "[editContent]",
 								type: "submit",
 								className: "w-full bg-primary",
@@ -32178,19 +32197,19 @@ function Login() {
 					})
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-uid": "src/pages/Login.tsx:180:9",
+					"data-uid": "src/pages/Login.tsx:194:9",
 					"data-prohibitions": "[editContent]",
 					className: "mt-6 text-center text-sm",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-							"data-uid": "src/pages/Login.tsx:181:11",
+							"data-uid": "src/pages/Login.tsx:195:11",
 							"data-prohibitions": "[editContent]",
 							className: "text-slate-500",
 							children: isLogin ? "Não tem uma conta?" : "Já tem uma conta?"
 						}),
 						" ",
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							"data-uid": "src/pages/Login.tsx:184:11",
+							"data-uid": "src/pages/Login.tsx:198:11",
 							"data-prohibitions": "[editContent]",
 							onClick: () => setIsLogin(!isLogin),
 							className: "text-primary font-medium hover:underline",
@@ -39334,10 +39353,6 @@ function ProtectedRoute({ children }) {
 var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BrowserRouter, {
 	"data-uid": "src/App.tsx:15:3",
 	"data-prohibitions": "[]",
-	future: {
-		v7_startTransition: false,
-		v7_relativeSplatPath: false
-	},
 	children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, {
 		"data-uid": "src/App.tsx:16:5",
 		"data-prohibitions": "[]",
@@ -39375,30 +39390,31 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BrowserRouter, {
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Route, {
 									"data-uid": "src/App.tsx:24:15",
 									"data-prohibitions": "[]",
+									path: "/",
 									element: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ProtectedRoute, {
-										"data-uid": "src/App.tsx:26:19",
+										"data-uid": "src/App.tsx:27:19",
 										"data-prohibitions": "[]",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Layout, {
-											"data-uid": "src/App.tsx:27:21",
+											"data-uid": "src/App.tsx:28:21",
 											"data-prohibitions": "[editContent]"
 										})
 									}),
 									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Route, {
-										"data-uid": "src/App.tsx:31:17",
+										"data-uid": "src/App.tsx:32:17",
 										"data-prohibitions": "[editContent]",
-										path: "/",
+										index: true,
 										element: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Index, {
-											"data-uid": "src/App.tsx:31:42",
+											"data-uid": "src/App.tsx:32:39",
 											"data-prohibitions": "[editContent]"
 										})
 									})
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Route, {
-									"data-uid": "src/App.tsx:33:15",
+									"data-uid": "src/App.tsx:34:15",
 									"data-prohibitions": "[editContent]",
 									path: "*",
 									element: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(NotFound, {
-										"data-uid": "src/App.tsx:33:40",
+										"data-uid": "src/App.tsx:34:40",
 										"data-prohibitions": "[editContent]"
 									})
 								})
@@ -39418,4 +39434,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BrowserRouter, {
 }));
 //#endregion
 
-//# sourceMappingURL=index-HJ8rVdHc.js.map
+//# sourceMappingURL=index-FmJC0YCL.js.map

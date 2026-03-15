@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -32,12 +32,18 @@ const signupSchema = z.object({
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuthStore()
+  const { login, user, isLoading: isAuthLoading } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
   const { toast } = useToast()
 
   const from = location.state?.from?.pathname || '/'
+
+  useEffect(() => {
+    if (user && !isAuthLoading) {
+      navigate(from, { replace: true })
+    }
+  }, [user, isAuthLoading, navigate, from])
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -52,8 +58,8 @@ export default function Login() {
   const onLogin = async (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true)
     try {
-      const user = await db.login(values.email, values.password)
-      login(user)
+      const loggedUser = await db.login(values.email, values.password)
+      login(loggedUser)
       toast({ title: 'Login realizado com sucesso!' })
       navigate(from, { replace: true })
     } catch (e: any) {
@@ -66,8 +72,8 @@ export default function Login() {
   const onSignup = async (values: z.infer<typeof signupSchema>) => {
     setIsLoading(true)
     try {
-      const user = await db.signup(values.name, values.email, values.password)
-      login(user)
+      const newUser = await db.signup(values.name, values.email, values.password)
+      login(newUser)
       toast({ title: 'Conta criada com sucesso!' })
       navigate(from, { replace: true })
     } catch (e: any) {
@@ -75,6 +81,14 @@ export default function Login() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+        <div className="text-slate-500">Carregando...</div>
+      </div>
+    )
   }
 
   return (

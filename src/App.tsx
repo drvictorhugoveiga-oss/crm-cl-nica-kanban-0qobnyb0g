@@ -12,7 +12,7 @@ import { WhatsAppProvider } from './stores/useWhatsAppStore'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 const App = () => (
-  <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
+  <BrowserRouter>
     <AuthProvider>
       <LeadProvider>
         <WhatsAppProvider>
@@ -22,13 +22,14 @@ const App = () => (
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route
+                path="/"
                 element={
                   <ProtectedRoute>
                     <Layout />
                   </ProtectedRoute>
                 }
               >
-                <Route path="/" element={<Index />} />
+                <Route index element={<Index />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
