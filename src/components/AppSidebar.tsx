@@ -18,6 +18,7 @@ import {
   SidebarMenuItem,
   SidebarHeader,
 } from '@/components/ui/sidebar'
+import { cn } from '@/lib/utils'
 
 const items = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
@@ -32,13 +33,13 @@ export function AppSidebar() {
   const location = useLocation()
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="border-r border-slate-200/60 shadow-sm">
       <SidebarHeader className="h-16 flex items-center justify-center border-b border-border/50">
         <div className="flex items-center gap-2 px-2 overflow-hidden w-full">
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+          <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center shrink-0 shadow-md shadow-primary/20">
             <Activity className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-semibold text-lg truncate group-data-[collapsible=icon]:hidden">
+          <span className="font-semibold text-lg tracking-tight truncate group-data-[collapsible=icon]:hidden">
             ClinicFlow
           </span>
         </div>
@@ -46,16 +47,22 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="mt-4 gap-2">
+            <SidebarMenu className="mt-4 gap-1.5 px-2">
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
                     isActive={location.pathname === item.url}
                     tooltip={item.title}
+                    className={cn(
+                      'h-11 sm:h-10 rounded-xl transition-all duration-200',
+                      location.pathname === item.url
+                        ? 'bg-primary/10 text-primary hover:bg-primary/15 font-semibold'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80',
+                    )}
                   >
-                    <Link to={item.url} className="text-base font-medium">
-                      <item.icon className="!size-5" />
+                    <Link to={item.url} className="text-[15px] sm:text-sm flex items-center gap-3">
+                      <item.icon className="!size-5 sm:!size-4" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>

@@ -10,12 +10,15 @@ import { Lead, LeadStage, LeadOrigin } from '@/types'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { logAudit } from '@/services/audit'
+import { toast } from 'sonner'
 
 interface LeadStore {
   leads: Lead[]
   origins: LeadOrigin[]
   searchQuery: string
   setSearchQuery: (query: string) => void
+  sourceFilter: string
+  setSourceFilter: (source: string) => void
   fetchLeads: () => Promise<void>
   addLead: (lead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>) => Promise<void>
   updateLeadStage: (id: string, newStage: LeadStage) => Promise<void>
@@ -43,6 +46,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   const [leads, setLeads] = useState<Lead[]>([])
   const [origins, setOrigins] = useState<LeadOrigin[]>([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [sourceFilter, setSourceFilter] = useState('all')
   const [isLoading, setIsLoading] = useState(false)
 
   const fetchLeads = useCallback(async () => {
@@ -54,7 +58,13 @@ export function LeadProvider({ children }: { children: ReactNode }) {
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-      if (data && !error) {
+
+      if (error) {
+        toast.error('Erro ao carregar leads: ' + error.message)
+        return
+      }
+
+      if (data) {
         const { data: decryptedData } = await supabase.functions.invoke('lgpd-encryption-handler', {
           body: { action: 'decrypt', items: data },
         })
@@ -69,6 +79,8 @@ export function LeadProvider({ children }: { children: ReactNode }) {
         { id: '4', name: 'Visita Presencial', description: 'Walk-ins' },
         { id: '5', name: 'WhatsApp', description: 'Contato via WhatsApp' },
       ])
+    } catch (err) {
+      toast.error('Erro de conexão ao buscar dados.')
     } finally {
       setIsLoading(false)
     }
@@ -96,36 +108,63 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       user_id: user.id,
     }
 
-    const { data: encryptedData } = await supabase.functions.invoke('lgpd-encryption-handler', {
-      body: { action: 'encrypt', items: [rowToInsert] },
-    })
+    try {
+      const { data: encryptedData } = await supabase.functions.invoke('lgpd-encryption-handler', {
+        body: { action: 'encrypt', items: [rowToInsert] },
+      })
 
-    const encryptedLead = encryptedData?.result?.[0] || rowToInsert
+      const encryptedLead = encryptedData?.result?.[0] || rowToInsert
 
-    const { data, error } = await supabase.from('leads').insert(encryptedLead).select().single()
-    if (data && !error) {
-      const insertedLead = {
-        ...newLead,
-        id: data.id,
-        created_at: data.created_at,
-        updated_at: data.created_at,
+      const { data, error } = await supabase.from('leads').insert(encryptedLead).select().single()
+
+      if (error) {
+        toast.error('Erro ao criar lead: verifique os dados informados.')
+        throw error
       }
-      setLeads((prev) => [insertedLead, ...prev])
-      await logAudit(user.id, 'Created Lead', { lead_id: data.id, source: newLead.origin })
+
+      if (data) {
+        const insertedLead = {
+          ...newLead,
+          id: data.id,
+          created_at: data.created_at,
+          updated_at: data.created_at,
+        }
+        setLeads((prev) => [insertedLead, ...prev])
+        toast.success('Lead adicionado com sucesso!')
+        await logAudit(user.id, 'Created Lead', { lead_id: data.id, source: newLead.origin })
+      }
+    } catch (err) {
+      console.error(err)
+      throw err
     }
   }
 
   const updateLeadStage = async (id: string, newStage: LeadStage) => {
     if (!user) return
 
+    // Optimistic update
+    const previousLeads = [...leads]
     setLeads((prev) =>
       prev.map((lead) =>
         lead.id === id ? { ...lead, stage: newStage, updated_at: new Date().toISOString() } : lead,
       ),
     )
 
-    await supabase.from('leads').update({ status: newStage }).eq('id', id)
-    await logAudit(user.id, 'Updated Lead Stage', { lead_id: id, new_stage: newStage })
+    try {
+      const { error } = await supabase.from('leads').update({ status: newStage }).eq('id', id)
+      if (error) {
+        setLeads(previousLeads) // Revert on failure
+        toast.error('Erro ao atualizar status do lead.')
+        throw error
+      }
+      toast.success('Status atualizado com sucesso!', {
+        duration: 2500,
+        position: 'bottom-right',
+      })
+      await logAudit(user.id, 'Updated Lead Stage', { lead_id: id, new_stage: newStage })
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const value = React.useMemo(
@@ -134,12 +173,14 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       origins,
       searchQuery,
       setSearchQuery,
+      sourceFilter,
+      setSourceFilter,
       fetchLeads,
       addLead,
       updateLeadStage,
       isLoading,
     }),
-    [leads, origins, searchQuery, fetchLeads, isLoading],
+    [leads, origins, searchQuery, sourceFilter, fetchLeads, isLoading],
   )
 
   return <LeadContext.Provider value={value}>{children}</LeadContext.Provider>

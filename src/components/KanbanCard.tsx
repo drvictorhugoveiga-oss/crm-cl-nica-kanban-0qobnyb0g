@@ -1,14 +1,15 @@
 import { Lead } from '@/types'
-import { Calendar, Mail, Phone } from 'lucide-react'
-import useLeadStore from '@/stores/useLeadStore'
+import { Calendar, Mail, Phone, MoreHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
+import { Button } from '@/components/ui/button'
 
 const ORIGIN_COLORS: Record<string, string> = {
   'Google Ads': 'bg-blue-100 text-blue-700',
   Indicação: 'bg-purple-100 text-purple-700',
   'Redes Sociais': 'bg-pink-100 text-pink-700',
   'Visita Presencial': 'bg-orange-100 text-orange-700',
+  WhatsApp: 'bg-emerald-100 text-emerald-700',
   Outro: 'bg-gray-100 text-gray-700',
 }
 
@@ -21,16 +22,13 @@ const STATUS_BORDER_COLORS: Record<string, string> = {
 }
 
 export function KanbanCard({ lead }: { lead: Lead }) {
-  const { searchQuery } = useLeadStore()
   const [isDragging, setIsDragging] = useState(false)
-
-  const isVisible =
-    lead.name.toLowerCase().includes(searchQuery.toLowerCase()) || lead.phone.includes(searchQuery)
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     e.dataTransfer.setData('leadId', lead.id)
     e.dataTransfer.effectAllowed = 'move'
-    setTimeout(() => setIsDragging(true), 0)
+    // Delay setting isDragging so the dragged clone still looks normal
+    requestAnimationFrame(() => setIsDragging(true))
   }
 
   const handleDragEnd = () => {
@@ -43,24 +41,32 @@ export function KanbanCard({ lead }: { lead: Lead }) {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       className={cn(
-        'group relative flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm border border-slate-200 border-l-4 cursor-grab hover:shadow-md transition-all duration-200 hover:-translate-y-0.5',
+        'group relative flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm border border-slate-200/60 border-l-4 cursor-grab transition-all duration-300 hover:shadow-md hover:-translate-y-1 active:cursor-grabbing animate-fade-in-up',
         STATUS_BORDER_COLORS[lead.stage],
-        !isVisible && 'opacity-30 grayscale',
-        isDragging && 'opacity-50 rotate-2 scale-95',
+        isDragging && 'opacity-40 rotate-3 scale-95 shadow-lg z-50',
       )}
     >
-      <div className="flex justify-between items-start">
-        <h4 className="font-semibold text-slate-800 text-base line-clamp-1">{lead.name}</h4>
+      <div className="flex justify-between items-start gap-2">
+        <h4 className="font-semibold text-slate-800 text-[15px] leading-tight line-clamp-2">
+          {lead.name}
+        </h4>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 -mr-2 -mt-1 text-slate-400 hover:text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:opacity-100"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
       </div>
 
-      <div className="flex flex-col gap-1.5 text-sm text-slate-600">
-        <div className="flex items-center gap-2">
-          <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+      <div className="flex flex-col gap-1.5 text-[13px] text-slate-600">
+        <div className="flex items-center gap-2 group/contact">
+          <Phone className="h-3.5 w-3.5 text-slate-400 group-hover/contact:text-primary transition-colors shrink-0" />
           <span className="truncate">{lead.phone}</span>
         </div>
         {lead.email && (
-          <div className="flex items-center gap-2">
-            <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+          <div className="flex items-center gap-2 group/contact">
+            <Mail className="h-3.5 w-3.5 text-slate-400 group-hover/contact:text-primary transition-colors shrink-0" />
             <span className="truncate" title={lead.email}>
               {lead.email}
             </span>
@@ -68,17 +74,17 @@ export function KanbanCard({ lead }: { lead: Lead }) {
         )}
       </div>
 
-      <div className="flex items-center justify-between mt-1 pt-3 border-t border-slate-100">
+      <div className="flex items-center justify-between mt-2 pt-3 border-t border-slate-100/80">
         <span
           className={cn(
-            'px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap',
+            'px-2 py-0.5 rounded-md text-[11px] font-semibold whitespace-nowrap tracking-wide',
             ORIGIN_COLORS[lead.origin] || ORIGIN_COLORS['Outro'],
           )}
         >
           {lead.origin}
         </span>
 
-        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+        <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
           <Calendar className="h-3 w-3" />
           {new Date(lead.contact_date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
         </div>

@@ -1,16 +1,26 @@
 import { KanbanBoard } from '@/components/KanbanBoard'
 import { WhatsAppSidebar } from '@/components/WhatsAppSidebar'
 import useWhatsAppStore from '@/stores/useWhatsAppStore'
+import useLeadStore from '@/stores/useLeadStore'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Download } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Download, Search, Filter } from 'lucide-react'
 import { logAudit } from '@/services/audit'
 import { useAuth } from '@/hooks/use-auth'
 import { toast } from 'sonner'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 const Index = () => {
   const { isOpen } = useWhatsAppStore()
   const { user } = useAuth()
+  const { searchQuery, setSearchQuery, sourceFilter, setSourceFilter, origins } = useLeadStore()
 
   const handleExport = () => {
     if (user) {
@@ -21,18 +31,57 @@ const Index = () => {
 
   return (
     <div className="h-full w-full flex overflow-hidden animate-fade-in bg-[#F8FAFC] relative">
-      <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
-        <div className="px-6 py-5 hidden sm:flex items-center justify-between shrink-0">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">Funil de Atendimento</h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Gerencie a jornada dos seus pacientes arrastando os cards.
-            </p>
+      <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 relative h-full">
+        {/* Header Section with Filters */}
+        <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 shrink-0 flex flex-col gap-4 shadow-sm z-10">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Funil de Atendimento</h1>
+              <p className="text-slate-500 text-xs sm:text-sm mt-1">
+                Gerencie a jornada dos seus pacientes arrastando os cards.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              className="gap-2 shrink-0 h-11 sm:h-9 w-full sm:w-auto rounded-full sm:rounded-md hover:bg-slate-50 transition-colors"
+            >
+              <Download className="h-4 w-4" /> <span className="sm:inline">Exportar Dados</span>
+            </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
-            <Download className="h-4 w-4" /> Exportar Dados
-          </Button>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Buscar por nome, e-mail ou telefone..."
+                className="pl-10 h-11 sm:h-10 bg-slate-50 border-slate-200 rounded-xl focus-visible:ring-primary/50 transition-shadow hover:bg-slate-100/50"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="w-full sm:w-64 shrink-0">
+              <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                <SelectTrigger className="h-11 sm:h-10 bg-slate-50 border-slate-200 rounded-xl hover:bg-slate-100/50 transition-colors">
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <Filter className="h-4 w-4 shrink-0" />
+                    <SelectValue placeholder="Todas as Origens" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as Origens</SelectItem>
+                  {origins.map((o) => (
+                    <SelectItem key={o.id} value={o.name}>
+                      {o.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
+
         <KanbanBoard />
       </div>
 
