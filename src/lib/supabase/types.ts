@@ -9,6 +9,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          details: Json | null
+          id: string
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          details?: Json | null
+          id?: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          details?: Json | null
+          id?: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      leads: {
+        Row: {
+          cost: number | null
+          created_at: string
+          email: string | null
+          id: string
+          lgpd_consent: boolean | null
+          name: string
+          phone: string | null
+          source: string
+          status: string
+          user_id: string | null
+          value: number | null
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          lgpd_consent?: boolean | null
+          name: string
+          phone?: string | null
+          source: string
+          status?: string
+          user_id?: string | null
+          value?: number | null
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          lgpd_consent?: boolean | null
+          name?: string
+          phone?: string | null
+          source?: string
+          status?: string
+          user_id?: string | null
+          value?: number | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           direction: string
@@ -186,6 +252,24 @@ export const Constants = {
 // --- COLUMN TYPES (actual PostgreSQL types) ---
 // Use this to know the real database type when writing migrations.
 // "string" in TypeScript types above may be uuid, text, varchar, timestamptz, etc.
+// Table: audit_logs
+//   id: uuid (not null, default: gen_random_uuid())
+//   user_id: uuid (nullable)
+//   action: text (not null)
+//   timestamp: timestamp with time zone (not null, default: now())
+//   details: jsonb (nullable)
+// Table: leads
+//   id: uuid (not null, default: gen_random_uuid())
+//   name: text (not null)
+//   source: text (not null)
+//   status: text (not null, default: 'new'::text)
+//   value: numeric (nullable, default: 0)
+//   cost: numeric (nullable, default: 0)
+//   created_at: timestamp with time zone (not null, default: now())
+//   user_id: uuid (nullable)
+//   email: text (nullable)
+//   phone: text (nullable)
+//   lgpd_consent: boolean (nullable, default: false)
 // Table: messages
 //   id: uuid (not null, default: gen_random_uuid())
 //   lead_id: uuid (nullable)
@@ -196,11 +280,26 @@ export const Constants = {
 //   read: boolean (not null, default: false)
 
 // --- CONSTRAINTS ---
+// Table: audit_logs
+//   PRIMARY KEY audit_logs_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY audit_logs_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+// Table: leads
+//   PRIMARY KEY leads_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY leads_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
 // Table: messages
 //   CHECK messages_direction_check: CHECK ((direction = ANY (ARRAY['incoming'::text, 'outgoing'::text])))
 //   PRIMARY KEY messages_pkey: PRIMARY KEY (id)
 
 // --- ROW LEVEL SECURITY POLICIES ---
+// Table: audit_logs
+//   Policy "Users can insert their own logs" (INSERT, PERMISSIVE) roles={authenticated}
+//     WITH CHECK: (auth.uid() = user_id)
+//   Policy "Users can view their own logs" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: (auth.uid() = user_id)
+// Table: leads
+//   Policy "Enable all access for authenticated users" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
 // Table: messages
 //   Policy "Enable all access for authenticated users" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: true
