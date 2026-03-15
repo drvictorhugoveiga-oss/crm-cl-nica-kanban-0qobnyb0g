@@ -44,7 +44,7 @@ export function KanbanCard({ lead }: { lead: Lead }) {
       onDragEnd={handleDragEnd}
       className={cn(
         'group relative flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm border border-slate-200 border-l-4 cursor-grab hover:shadow-md transition-all duration-200 hover:-translate-y-0.5',
-        STATUS_BORDER_COLORS[lead.status],
+        STATUS_BORDER_COLORS[lead.stage],
         !isVisible && 'opacity-30 grayscale',
         isDragging && 'opacity-50 rotate-2 scale-95',
       )}
@@ -80,7 +80,7 @@ export function KanbanCard({ lead }: { lead: Lead }) {
 
         <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
           <Calendar className="h-3 w-3" />
-          {new Date(lead.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
+          {new Date(lead.contact_date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
         </div>
       </div>
     </div>

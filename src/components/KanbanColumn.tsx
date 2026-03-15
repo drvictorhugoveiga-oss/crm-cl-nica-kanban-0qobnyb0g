@@ -1,20 +1,20 @@
 import { useState } from 'react'
-import { LeadStatus } from '@/types'
+import { LeadStage } from '@/types'
 import { KanbanCard } from './KanbanCard'
 import useLeadStore from '@/stores/useLeadStore'
 import { cn } from '@/lib/utils'
 
 interface KanbanColumnProps {
-  id: LeadStatus
+  id: LeadStage
   title: string
   colorClass: string
 }
 
 export function KanbanColumn({ id, title, colorClass }: KanbanColumnProps) {
-  const { leads, updateLeadStatus } = useLeadStore()
+  const { leads, updateLeadStage } = useLeadStore()
   const [isOver, setIsOver] = useState(false)
 
-  const columnLeads = leads.filter((lead) => lead.status === id)
+  const columnLeads = leads.filter((lead) => lead.stage === id)
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -31,7 +31,7 @@ export function KanbanColumn({ id, title, colorClass }: KanbanColumnProps) {
     setIsOver(false)
     const leadId = e.dataTransfer.getData('leadId')
     if (leadId) {
-      updateLeadStatus(leadId, id)
+      updateLeadStage(leadId, id)
     }
   }
 

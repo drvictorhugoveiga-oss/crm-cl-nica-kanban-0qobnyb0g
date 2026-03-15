@@ -28,13 +28,14 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import useLeadStore from '@/stores/useLeadStore'
+import useAuthStore from '@/stores/useAuthStore'
 
 const formSchema = z.object({
   name: z.string().min(2, 'Nome é obrigatório'),
   phone: z.string().min(10, 'Telefone inválido'),
   email: z.string().email('E-mail inválido').or(z.literal('')),
-  date: z.string().min(1, 'Data é obrigatória'),
-  origin: z.enum(['Google Ads', 'Indicação', 'Redes Sociais', 'Visita Presencial', 'Outro']),
+  contact_date: z.string().min(1, 'Data é obrigatória'),
+  origin: z.string().min(1, 'Origem é obrigatória'),
 })
 
 export function NewLeadDialog({
@@ -44,7 +45,8 @@ export function NewLeadDialog({
   open: boolean
   onOpenChange: (o: boolean) => void
 }) {
-  const { addLead } = useLeadStore()
+  const { addLead, origins } = useLeadStore()
+  const { user } = useAuthStore()
   const { toast } = useToast()
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -53,20 +55,33 @@ export function NewLeadDialog({
       name: '',
       phone: '',
       email: '',
-      date: format(new Date(), 'yyyy-MM-dd'),
-      origin: 'Google Ads',
+      contact_date: format(new Date(), 'yyyy-MM-dd'),
+      origin: '',
     },
   })
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    addLead(values)
-    toast({
-      title: 'Lead criado com sucesso!',
-      description: `${values.name} foi adicionado(a) aos contatos.`,
-      className: 'bg-emerald-50 text-emerald-900 border-emerald-200',
-    })
-    form.reset()
-    onOpenChange(false)
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!user) return
+    try {
+      await addLead({
+        ...values,
+        user_id: user.id,
+        stage: 'novo_contato',
+      })
+      toast({
+        title: 'Lead criado com sucesso!',
+        description: `${values.name} foi adicionado(a) aos contatos.`,
+        className: 'bg-emerald-50 text-emerald-900 border-emerald-200',
+      })
+      form.reset()
+      onOpenChange(false)
+    } catch (e) {
+      toast({
+        title: 'Erro ao criar lead',
+        description: 'Tente novamente.',
+        variant: 'destructive',
+      })
+    }
   }
 
   return (
@@ -106,7 +121,7 @@ export function NewLeadDialog({
               />
               <FormField
                 control={form.control}
-                name="date"
+                name="contact_date"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Data de Contato *</FormLabel>
@@ -144,11 +159,11 @@ export function NewLeadDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Google Ads">Google Ads</SelectItem>
-                      <SelectItem value="Indicação">Indicação</SelectItem>
-                      <SelectItem value="Redes Sociais">Redes Sociais</SelectItem>
-                      <SelectItem value="Visita Presencial">Visita Presencial</SelectItem>
-                      <SelectItem value="Outro">Outro</SelectItem>
+                      {origins.map((org) => (
+                        <SelectItem key={org.id} value={org.name}>
+                          {org.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />

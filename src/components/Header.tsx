@@ -1,4 +1,4 @@
-import { Bell, Plus, Search } from 'lucide-react'
+import { LogOut, Bell, Plus, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -6,9 +6,19 @@ import { SidebarTrigger } from '@/components/ui/sidebar'
 import useLeadStore from '@/stores/useLeadStore'
 import { useState } from 'react'
 import { NewLeadDialog } from './NewLeadDialog'
+import useAuthStore from '@/stores/useAuthStore'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 export function Header() {
   const { searchQuery, setSearchQuery } = useLeadStore()
+  const { user, logout } = useAuthStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   return (
@@ -39,13 +49,28 @@ export function Header() {
           <Bell className="h-5 w-5" />
         </Button>
 
-        <Avatar className="h-9 w-9 border cursor-pointer hover:opacity-80 transition-opacity">
-          <AvatarImage
-            src="https://img.usecurling.com/ppl/thumbnail?gender=female&seed=1"
-            alt="Dr. User"
-          />
-          <AvatarFallback>DR</AvatarFallback>
-        </Avatar>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Avatar className="h-9 w-9 border cursor-pointer hover:opacity-80 transition-opacity">
+              <AvatarImage
+                src={`https://img.usecurling.com/ppl/thumbnail?seed=${user?.id || '1'}`}
+                alt={user?.name || 'User'}
+              />
+              <AvatarFallback>{user?.name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+            </Avatar>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+              {user?.email}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-destructive cursor-pointer" onClick={() => logout()}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Sair (Logout)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <NewLeadDialog open={isModalOpen} onOpenChange={setIsModalOpen} />
