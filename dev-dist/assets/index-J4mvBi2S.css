@@ -834,8 +834,16 @@ body {
   margin-bottom: 0.5rem;
 }
 
+.mb-3{
+  margin-bottom: 0.75rem;
+}
+
 .mb-4{
   margin-bottom: 1rem;
+}
+
+.mb-6{
+  margin-bottom: 1.5rem;
 }
 
 .mb-8{
@@ -958,6 +966,10 @@ body {
 
 .h-2\.5{
   height: 0.625rem;
+}
+
+.h-20{
+  height: 5rem;
 }
 
 .h-24{
@@ -1094,6 +1106,10 @@ body {
 
 .w-2\.5{
   width: 0.625rem;
+}
+
+.w-20{
+  width: 5rem;
 }
 
 .w-3{
@@ -1245,6 +1261,10 @@ body {
 
 .flex-1{
   flex: 1 1 0%;
+}
+
+.flex-shrink-0{
+  flex-shrink: 0;
 }
 
 .shrink-0{
@@ -1545,6 +1565,10 @@ body {
   border-radius: 1rem;
 }
 
+.rounded-3xl{
+  border-radius: 1.5rem;
+}
+
 .rounded-\[2px\]{
   border-radius: 2px;
 }
@@ -1721,6 +1745,10 @@ body {
 
 .border-transparent{
   border-color: transparent;
+}
+
+.border-white\/60{
+  border-color: rgb(255 255 255 / 0.6);
 }
 
 .border-l-blue-500{
@@ -1910,6 +1938,14 @@ body {
 .bg-white{
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+}
+
+.bg-white\/90{
+  background-color: rgb(255 255 255 / 0.9);
+}
+
+.bg-\[url\(\'https\:\/\/img\.usecurling\.com\/p\/800\/800\?q\=pattern\&color\=gray\'\)\]{
+  background-image: url('https://img.usecurling.com/p/800/800?q=pattern&color=gray');
 }
 
 .fill-current{
@@ -2348,6 +2384,10 @@ body {
   opacity: 0.3;
 }
 
+.opacity-40{
+  opacity: 0.4;
+}
+
 .opacity-50{
   opacity: 0.5;
 }
@@ -2364,6 +2404,10 @@ body {
   opacity: 0.9;
 }
 
+.mix-blend-multiply{
+  mix-blend-mode: multiply;
+}
+
 .shadow-\[-4px_0_15px_-3px_rgba\(0\2c 0\2c 0\2c 0\.1\)\]{
   --tw-shadow: -4px 0 15px -3px rgba(0,0,0,0.1);
   --tw-shadow-colored: -4px 0 15px -3px var(--tw-shadow-color);
@@ -2373,6 +2417,18 @@ body {
 .shadow-\[0_0_0_1px_hsl\(var\(--sidebar-border\)\)\]{
   --tw-shadow: 0 0 0 1px hsl(var(--sidebar-border));
   --tw-shadow-colored: 0 0 0 1px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-\[0_4px_14px_-4px_rgba\(37\2c 211\2c 102\2c 0\.4\)\]{
+  --tw-shadow: 0 4px 14px -4px rgba(37,211,102,0.4);
+  --tw-shadow-colored: 0 4px 14px -4px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-\[4px_0_15px_-3px_rgba\(0\2c 0\2c 0\2c 0\.1\)\]{
+  --tw-shadow: 4px 0 15px -3px rgba(0,0,0,0.1);
+  --tw-shadow-colored: 4px 0 15px -3px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
@@ -2467,6 +2523,11 @@ body {
 
 .filter{
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
+.backdrop-blur-md{
+  --tw-backdrop-blur: blur(12px);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
 }
 
 .transition{
@@ -3714,6 +3775,10 @@ body {
 
   .sm\:min-w-\[300px\]{
     min-width: 300px;
+  }
+
+  .sm\:max-w-\[380px\]{
+    max-width: 380px;
   }
 
   .sm\:max-w-\[425px\]{

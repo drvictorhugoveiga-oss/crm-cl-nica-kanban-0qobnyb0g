@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Activity, LayoutDashboard, Settings, Users } from 'lucide-react'
+import { Activity, LayoutDashboard, Settings, Users, MessageCircle } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -12,10 +12,11 @@ import {
 } from '@/components/ui/sidebar'
 
 const items = [
-  { title: 'Dashboard', url: '#', icon: LayoutDashboard },
-  { title: 'Leads', url: '/', icon: Users },
-  { title: 'Analytics', url: '#', icon: Activity },
-  { title: 'Configurações', url: '#', icon: Settings },
+  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+  { title: 'Leads Kanban', url: '/', icon: Users },
+  { title: 'WhatsApp Chat', url: '/chat', icon: MessageCircle },
+  { title: 'Analytics', url: '/analytics', icon: Activity },
+  { title: 'Configurações', url: '/settings', icon: Settings },
 ]
 
 export function AppSidebar() {

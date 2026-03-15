@@ -26300,6 +26300,61 @@ var Index = () => {
 	});
 };
 //#endregion
+//#region src/pages/Chat.tsx
+var Chat = () => {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		"data-uid": "src/pages/Chat.tsx:6:5",
+		"data-prohibitions": "[editContent]",
+		className: "h-full w-full bg-[#EFEAE2] flex animate-fade-in relative overflow-hidden",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			"data-uid": "src/pages/Chat.tsx:7:7",
+			"data-prohibitions": "[]",
+			className: "w-full sm:max-w-[380px] h-full flex-shrink-0 shadow-[4px_0_15px_-3px_rgba(0,0,0,0.1)] z-10",
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(WhatsAppSidebar, {
+				"data-uid": "src/pages/Chat.tsx:8:9",
+				"data-prohibitions": "[editContent]"
+			})
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			"data-uid": "src/pages/Chat.tsx:10:7",
+			"data-prohibitions": "[editContent]",
+			className: "hidden sm:flex flex-1 flex-col items-center justify-center relative",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				"data-uid": "src/pages/Chat.tsx:12:9",
+				"data-prohibitions": "[editContent]",
+				className: "absolute inset-0 opacity-40 bg-[url('https://img.usecurling.com/p/800/800?q=pattern&color=gray')] pointer-events-none mix-blend-multiply"
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				"data-uid": "src/pages/Chat.tsx:14:9",
+				"data-prohibitions": "[]",
+				className: "relative z-10 bg-white/90 backdrop-blur-md p-8 rounded-3xl shadow-sm text-center max-w-md border border-white/60",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						"data-uid": "src/pages/Chat.tsx:15:11",
+						"data-prohibitions": "[]",
+						className: "h-20 w-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_4px_14px_-4px_rgba(37,211,102,0.4)]",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MessageCircle, {
+							"data-uid": "src/pages/Chat.tsx:16:13",
+							"data-prohibitions": "[editContent]",
+							className: "h-10 w-10 text-[#25D366]"
+						})
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+						"data-uid": "src/pages/Chat.tsx:18:11",
+						"data-prohibitions": "[]",
+						className: "text-2xl font-bold text-slate-800 mb-3",
+						children: "WhatsApp Web"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						"data-uid": "src/pages/Chat.tsx:19:11",
+						"data-prohibitions": "[]",
+						className: "text-slate-600 leading-relaxed",
+						children: "Selecione ou inicie uma conversa no painel lateral. As mensagens são sincronizadas automaticamente com o CRM do ClinicFlow."
+					})
+				]
+			})]
+		})]
+	});
+};
+//#endregion
 //#region src/pages/NotFound.tsx
 var NotFound = () => {
 	const location = useLocation();
@@ -34151,88 +34206,93 @@ SidebarMenuSubButton.displayName = "SidebarMenuSubButton";
 var items = [
 	{
 		title: "Dashboard",
-		url: "#",
+		url: "/dashboard",
 		icon: LayoutDashboard
 	},
 	{
-		title: "Leads",
+		title: "Leads Kanban",
 		url: "/",
 		icon: Users
 	},
 	{
+		title: "WhatsApp Chat",
+		url: "/chat",
+		icon: MessageCircle
+	},
+	{
 		title: "Analytics",
-		url: "#",
+		url: "/analytics",
 		icon: Activity
 	},
 	{
 		title: "Configurações",
-		url: "#",
+		url: "/settings",
 		icon: Settings
 	}
 ];
 function AppSidebar() {
 	const location = useLocation();
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Sidebar, {
-		"data-uid": "src/components/AppSidebar.tsx:25:5",
+		"data-uid": "src/components/AppSidebar.tsx:26:5",
 		"data-prohibitions": "[editContent]",
 		collapsible: "icon",
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarHeader, {
-			"data-uid": "src/components/AppSidebar.tsx:26:7",
+			"data-uid": "src/components/AppSidebar.tsx:27:7",
 			"data-prohibitions": "[]",
 			className: "h-16 flex items-center justify-center border-b border-border/50",
 			children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				"data-uid": "src/components/AppSidebar.tsx:27:9",
+				"data-uid": "src/components/AppSidebar.tsx:28:9",
 				"data-prohibitions": "[]",
 				className: "flex items-center gap-2 px-2 overflow-hidden w-full",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					"data-uid": "src/components/AppSidebar.tsx:28:11",
+					"data-uid": "src/components/AppSidebar.tsx:29:11",
 					"data-prohibitions": "[]",
 					className: "h-8 w-8 rounded-lg bg-primary flex items-center justify-center shrink-0",
 					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Activity, {
-						"data-uid": "src/components/AppSidebar.tsx:29:13",
+						"data-uid": "src/components/AppSidebar.tsx:30:13",
 						"data-prohibitions": "[editContent]",
 						className: "h-5 w-5 text-primary-foreground"
 					})
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-					"data-uid": "src/components/AppSidebar.tsx:31:11",
+					"data-uid": "src/components/AppSidebar.tsx:32:11",
 					"data-prohibitions": "[]",
 					className: "font-semibold text-lg truncate group-data-[collapsible=icon]:hidden",
 					children: "ClinicFlow"
 				})]
 			})
 		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarContent, {
-			"data-uid": "src/components/AppSidebar.tsx:36:7",
+			"data-uid": "src/components/AppSidebar.tsx:37:7",
 			"data-prohibitions": "[editContent]",
 			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarGroup, {
-				"data-uid": "src/components/AppSidebar.tsx:37:9",
+				"data-uid": "src/components/AppSidebar.tsx:38:9",
 				"data-prohibitions": "[editContent]",
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarGroupContent, {
-					"data-uid": "src/components/AppSidebar.tsx:38:11",
+					"data-uid": "src/components/AppSidebar.tsx:39:11",
 					"data-prohibitions": "[editContent]",
 					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarMenu, {
-						"data-uid": "src/components/AppSidebar.tsx:39:13",
+						"data-uid": "src/components/AppSidebar.tsx:40:13",
 						"data-prohibitions": "[editContent]",
 						className: "mt-4 gap-2",
 						children: items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarMenuItem, {
-							"data-uid": "src/components/AppSidebar.tsx:41:17",
+							"data-uid": "src/components/AppSidebar.tsx:42:17",
 							"data-prohibitions": "[editContent]",
 							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SidebarMenuButton, {
-								"data-uid": "src/components/AppSidebar.tsx:42:19",
+								"data-uid": "src/components/AppSidebar.tsx:43:19",
 								"data-prohibitions": "[editContent]",
 								asChild: true,
 								isActive: location.pathname === item.url,
 								tooltip: item.title,
 								children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Link, {
-									"data-uid": "src/components/AppSidebar.tsx:47:21",
+									"data-uid": "src/components/AppSidebar.tsx:48:21",
 									"data-prohibitions": "[editContent]",
 									to: item.url,
 									className: "text-base font-medium",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(item.icon, {
-										"data-uid": "src/components/AppSidebar.tsx:48:23",
+										"data-uid": "src/components/AppSidebar.tsx:49:23",
 										"data-prohibitions": "[editContent]",
 										className: "!size-5"
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										"data-uid": "src/components/AppSidebar.tsx:49:23",
+										"data-uid": "src/components/AppSidebar.tsx:50:23",
 										"data-prohibitions": "[editContent]",
 										children: item.title
 									})]
@@ -39362,70 +39422,78 @@ function ProtectedRoute({ children }) {
 //#endregion
 //#region src/App.tsx
 var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BrowserRouter, {
-	"data-uid": "src/App.tsx:15:3",
+	"data-uid": "src/App.tsx:16:3",
 	"data-prohibitions": "[]",
 	children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthProvider, {
-		"data-uid": "src/App.tsx:16:5",
+		"data-uid": "src/App.tsx:17:5",
 		"data-prohibitions": "[]",
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LeadProvider, {
-			"data-uid": "src/App.tsx:17:7",
+			"data-uid": "src/App.tsx:18:7",
 			"data-prohibitions": "[]",
 			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(WhatsAppProvider, {
-				"data-uid": "src/App.tsx:18:9",
+				"data-uid": "src/App.tsx:19:9",
 				"data-prohibitions": "[]",
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(TooltipProvider, {
-					"data-uid": "src/App.tsx:19:11",
+					"data-uid": "src/App.tsx:20:11",
 					"data-prohibitions": "[]",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toaster$2, {
-							"data-uid": "src/App.tsx:20:13",
-							"data-prohibitions": "[editContent]"
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toaster, {
 							"data-uid": "src/App.tsx:21:13",
 							"data-prohibitions": "[editContent]"
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Routes, {
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toaster, {
 							"data-uid": "src/App.tsx:22:13",
+							"data-prohibitions": "[editContent]"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Routes, {
+							"data-uid": "src/App.tsx:23:13",
 							"data-prohibitions": "[]",
 							children: [
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Route, {
-									"data-uid": "src/App.tsx:23:15",
+									"data-uid": "src/App.tsx:24:15",
 									"data-prohibitions": "[editContent]",
 									path: "/login",
 									element: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Login, {
-										"data-uid": "src/App.tsx:23:45",
+										"data-uid": "src/App.tsx:24:45",
 										"data-prohibitions": "[editContent]"
 									})
 								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Route, {
-									"data-uid": "src/App.tsx:24:15",
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Route, {
+									"data-uid": "src/App.tsx:25:15",
 									"data-prohibitions": "[]",
 									path: "/",
 									element: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ProtectedRoute, {
-										"data-uid": "src/App.tsx:27:19",
+										"data-uid": "src/App.tsx:28:19",
 										"data-prohibitions": "[]",
 										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Layout, {
-											"data-uid": "src/App.tsx:28:21",
+											"data-uid": "src/App.tsx:29:21",
 											"data-prohibitions": "[editContent]"
 										})
 									}),
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Route, {
-										"data-uid": "src/App.tsx:32:17",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Route, {
+										"data-uid": "src/App.tsx:33:17",
 										"data-prohibitions": "[editContent]",
 										index: true,
 										element: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Index, {
-											"data-uid": "src/App.tsx:32:39",
+											"data-uid": "src/App.tsx:33:39",
 											"data-prohibitions": "[editContent]"
 										})
-									})
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Route, {
+										"data-uid": "src/App.tsx:34:17",
+										"data-prohibitions": "[editContent]",
+										path: "chat",
+										element: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Chat, {
+											"data-uid": "src/App.tsx:34:45",
+											"data-prohibitions": "[editContent]"
+										})
+									})]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Route, {
-									"data-uid": "src/App.tsx:34:15",
+									"data-uid": "src/App.tsx:36:15",
 									"data-prohibitions": "[editContent]",
 									path: "*",
 									element: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(NotFound, {
-										"data-uid": "src/App.tsx:34:40",
+										"data-uid": "src/App.tsx:36:40",
 										"data-prohibitions": "[editContent]"
 									})
 								})
@@ -39445,4 +39513,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BrowserRouter, {
 }));
 //#endregion
 
-//# sourceMappingURL=index-urK7sl4q.js.map
+//# sourceMappingURL=index-Cj44MuTf.js.map
