@@ -26309,30 +26309,41 @@ var NotFound = () => {
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 		"data-uid": "src/pages/NotFound.tsx:13:5",
 		"data-prohibitions": "[]",
-		className: "min-h-screen flex items-center justify-center bg-gray-100",
+		className: "min-h-screen flex items-center justify-center bg-slate-50 p-4",
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 			"data-uid": "src/pages/NotFound.tsx:14:7",
 			"data-prohibitions": "[]",
-			className: "text-center",
+			className: "text-center max-w-md w-full bg-white p-8 rounded-2xl shadow-sm border border-slate-100",
 			children: [
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
 					"data-uid": "src/pages/NotFound.tsx:15:9",
 					"data-prohibitions": "[]",
-					className: "text-4xl font-bold mb-4",
+					className: "text-6xl font-bold text-slate-800 mb-4",
 					children: "404"
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
 					"data-uid": "src/pages/NotFound.tsx:16:9",
 					"data-prohibitions": "[]",
-					className: "text-xl text-gray-600 mb-4",
-					children: "Oops! Page not found"
+					className: "text-2xl font-semibold text-slate-700 mb-2",
+					children: "Página não encontrada"
 				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", {
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 					"data-uid": "src/pages/NotFound.tsx:17:9",
 					"data-prohibitions": "[]",
-					href: "/",
-					className: "text-blue-500 hover:text-blue-700 underline",
-					children: "Return to Home"
+					className: "text-slate-500 mb-8",
+					children: "A página que você está procurando não existe ou foi movida."
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+					"data-uid": "src/pages/NotFound.tsx:20:9",
+					"data-prohibitions": "[]",
+					asChild: true,
+					className: "w-full",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+						"data-uid": "src/pages/NotFound.tsx:21:11",
+						"data-prohibitions": "[]",
+						to: "/",
+						children: "Voltar para o Início"
+					})
 				})
 			]
 		})
@@ -39434,4 +39445,4 @@ var App = () => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BrowserRouter, {
 }));
 //#endregion
 
-//# sourceMappingURL=index-FmJC0YCL.js.map
+//# sourceMappingURL=index-urK7sl4q.js.map
