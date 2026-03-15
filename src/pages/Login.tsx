@@ -3,8 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { db } from '@/lib/db'
-import useAuthStore from '@/stores/useAuthStore'
+import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -32,7 +31,7 @@ const signupSchema = z.object({
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
-  const { login, user, isLoading: isAuthLoading } = useAuthStore()
+  const { signIn, signUp, user, loading: isAuthLoading } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const { toast } = useToast()
@@ -58,8 +57,8 @@ export default function Login() {
   const onLogin = async (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true)
     try {
-      const loggedUser = await db.login(values.email, values.password)
-      login(loggedUser)
+      const { error } = await signIn(values.email, values.password)
+      if (error) throw error
       toast({ title: 'Login realizado com sucesso!' })
       navigate(from, { replace: true })
     } catch (e: any) {
@@ -72,8 +71,8 @@ export default function Login() {
   const onSignup = async (values: z.infer<typeof signupSchema>) => {
     setIsLoading(true)
     try {
-      const newUser = await db.signup(values.name, values.email, values.password)
-      login(newUser)
+      const { error } = await signUp(values.email, values.password, values.name)
+      if (error) throw error
       toast({ title: 'Conta criada com sucesso!' })
       navigate(from, { replace: true })
     } catch (e: any) {
@@ -86,7 +85,7 @@ export default function Login() {
   if (isAuthLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-        <div className="text-slate-500">Carregando...</div>
+        <div className="text-slate-500 animate-pulse">Carregando ClinicFlow...</div>
       </div>
     )
   }

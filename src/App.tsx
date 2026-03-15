@@ -8,8 +8,10 @@ import NotFound from './pages/NotFound'
 import Login from './pages/Login'
 import Layout from './components/Layout'
 import AnaliseOrigem from './pages/AnaliseOrigem'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import PrivacySettings from './pages/PrivacySettings'
 import { LeadProvider } from './stores/useLeadStore'
-import { AuthProvider } from './stores/useAuthStore'
+import { AuthProvider } from './hooks/use-auth'
 import { WhatsAppProvider } from './stores/useWhatsAppStore'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
@@ -34,6 +36,8 @@ const App = () => (
                 <Route index element={<Index />} />
                 <Route path="chat" element={<Chat />} />
                 <Route path="analise-origem" element={<AnaliseOrigem />} />
+                <Route path="politica-privacidade" element={<PrivacyPolicy />} />
+                <Route path="configuracoes-privacidade" element={<PrivacySettings />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

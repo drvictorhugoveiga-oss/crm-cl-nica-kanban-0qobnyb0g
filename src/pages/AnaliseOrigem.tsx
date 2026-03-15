@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/table'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { Loader2 } from 'lucide-react'
+import { useAuth } from '@/hooks/use-auth'
 
 interface LeadData {
   id: string
@@ -31,12 +32,14 @@ interface LeadData {
 }
 
 export default function AnaliseOrigem() {
+  const { user } = useAuth()
   const [timeframe, setTimeframe] = useState('30')
   const [leads, setLeads] = useState<LeadData[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchLeads = async () => {
+      if (!user) return
       setLoading(true)
       const date = new Date()
       date.setDate(date.getDate() - parseInt(timeframe))
@@ -44,6 +47,7 @@ export default function AnaliseOrigem() {
       const { data, error } = await supabase
         .from('leads')
         .select('*')
+        .eq('user_id', user.id)
         .gte('created_at', date.toISOString())
 
       if (!error && data) {
@@ -53,10 +57,10 @@ export default function AnaliseOrigem() {
     }
 
     fetchLeads()
-  }, [timeframe])
+  }, [timeframe, user])
 
   const chartConfig = {
-    Google: { label: 'Google', color: '#4285F4' },
+    Google: { label: 'Google Ads', color: '#4285F4' },
     Instagram: { label: 'Instagram', color: '#E1306C' },
     Facebook: { label: 'Facebook', color: '#1877F2' },
     Referral: { label: 'Indicação', color: '#34A853' },
@@ -90,7 +94,6 @@ export default function AnaliseOrigem() {
             : data.value > 0
               ? Infinity
               : 0
-
         return {
           source,
           total: data.total,
@@ -118,10 +121,9 @@ export default function AnaliseOrigem() {
           <div>
             <h1 className="text-2xl font-bold text-slate-800">Análise de Origem</h1>
             <p className="text-slate-500 text-sm mt-1">
-              Acompanhe a performance dos canais de aquisição de leads.
+              Acompanhe a performance dos canais de aquisição.
             </p>
           </div>
-
           <div className="w-[180px]">
             <Select value={timeframe} onValueChange={setTimeframe}>
               <SelectTrigger className="bg-white shadow-sm border-slate-200">
@@ -151,7 +153,7 @@ export default function AnaliseOrigem() {
             <Card className="lg:col-span-1 shadow-sm border-slate-200 flex flex-col">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg">Distribuição de Leads</CardTitle>
-                <CardDescription>Percentual por canal de origem</CardDescription>
+                <CardDescription>Percentual por canal</CardDescription>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col items-center justify-center min-h-[300px]">
                 <ChartContainer config={chartConfig} className="w-full h-full aspect-square">

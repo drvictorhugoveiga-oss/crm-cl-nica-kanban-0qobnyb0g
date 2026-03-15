@@ -1,7 +1,4 @@
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import * as z from 'zod'
-import { format } from 'date-fns'
+import { useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -9,16 +6,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -26,61 +17,47 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useToast } from '@/hooks/use-toast'
 import useLeadStore from '@/stores/useLeadStore'
-import useAuthStore from '@/stores/useAuthStore'
-
-const formSchema = z.object({
-  name: z.string().min(2, 'Nome é obrigatório'),
-  phone: z.string().min(10, 'Telefone inválido'),
-  email: z.string().email('E-mail inválido').or(z.literal('')),
-  contact_date: z.string().min(1, 'Data é obrigatória'),
-  origin: z.string().min(1, 'Origem é obrigatória'),
-})
+import { toast } from 'sonner'
 
 export function NewLeadDialog({
   open,
   onOpenChange,
 }: {
   open: boolean
-  onOpenChange: (o: boolean) => void
+  onOpenChange: (open: boolean) => void
 }) {
   const { addLead, origins } = useLeadStore()
-  const { user } = useAuthStore()
-  const { toast } = useToast()
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: '',
-      phone: '',
-      email: '',
-      contact_date: format(new Date(), 'yyyy-MM-dd'),
-      origin: '',
-    },
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    origin: '',
+    lgpd_consent: false,
   })
+  const [loading, setLoading] = useState(false)
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!user) return
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
     try {
       await addLead({
-        ...values,
-        user_id: user.id,
+        user_id: '',
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        origin: formData.origin,
         stage: 'novo_contato',
+        contact_date: new Date().toISOString().split('T')[0],
+        lgpd_consent: formData.lgpd_consent,
       })
-      toast({
-        title: 'Lead criado com sucesso!',
-        description: `${values.name} foi adicionado(a) aos contatos.`,
-        className: 'bg-emerald-50 text-emerald-900 border-emerald-200',
-      })
-      form.reset()
+      toast.success('Lead criado com sucesso!')
       onOpenChange(false)
-    } catch (e) {
-      toast({
-        title: 'Erro ao criar lead',
-        description: 'Tente novamente.',
-        variant: 'destructive',
-      })
+      setFormData({ name: '', phone: '', email: '', origin: '', lgpd_consent: false })
+    } catch (err) {
+      toast.error('Erro ao criar lead')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -88,98 +65,80 @@ export function NewLeadDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-primary">Novo Paciente Lead</DialogTitle>
+          <DialogTitle>Adicionar Novo Lead</DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome Completo *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="João da Silva" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          <div className="space-y-2">
+            <Label>Nome do Paciente</Label>
+            <Input
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefone *</FormLabel>
-                    <FormControl>
-                      <Input type="tel" placeholder="(00) 00000-0000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="contact_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data de Contato *</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Telefone (WhatsApp)</Label>
+              <Input
+                required
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
             </div>
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>E-mail (opcional)</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="joao@exemplo.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+            <div className="space-y-2">
+              <Label>E-mail</Label>
+              <Input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Origem do Lead</Label>
+            <Select
+              required
+              value={formData.origin}
+              onValueChange={(v) => setFormData({ ...formData, origin: v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione..." />
+              </SelectTrigger>
+              <SelectContent>
+                {origins.map((o) => (
+                  <SelectItem key={o.id} value={o.name}>
+                    {o.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-start space-x-3 bg-slate-50 p-3 rounded-lg border border-slate-200 mt-2">
+            <Checkbox
+              id="lgpd"
+              checked={formData.lgpd_consent}
+              onCheckedChange={(c) => setFormData({ ...formData, lgpd_consent: c === true })}
+              className="mt-0.5"
             />
-            <FormField
-              control={form.control}
-              name="origin"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Origem *</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a origem" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {origins.map((org) => (
-                        <SelectItem key={org.id} value={org.name}>
-                          {org.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter className="pt-4">
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" className="bg-success hover:bg-success/90 text-white">
-                Salvar Lead
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+            <div className="grid gap-1.5 leading-none">
+              <Label htmlFor="lgpd" className="text-sm font-medium">
+                Consentimento LGPD
+              </Label>
+              <p className="text-xs text-slate-500">
+                O paciente forneceu consentimento para o tratamento e armazenamento de seus dados
+                pessoais.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="mt-6">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Salvando...' : 'Salvar Lead'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )

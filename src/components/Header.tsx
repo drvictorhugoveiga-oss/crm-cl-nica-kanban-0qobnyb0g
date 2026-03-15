@@ -6,7 +6,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar'
 import useLeadStore from '@/stores/useLeadStore'
 import { useState } from 'react'
 import { NewLeadDialog } from './NewLeadDialog'
-import useAuthStore from '@/stores/useAuthStore'
+import { useAuth } from '@/hooks/use-auth'
 import useWhatsAppStore from '@/stores/useWhatsAppStore'
 import {
   DropdownMenu,
@@ -19,7 +19,7 @@ import {
 
 export function Header() {
   const { searchQuery, setSearchQuery } = useLeadStore()
-  const { user, logout } = useAuthStore()
+  const { user, signOut } = useAuth()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const { toggleSidebar, chats } = useWhatsAppStore()
 
@@ -70,18 +70,20 @@ export function Header() {
             <Avatar className="h-9 w-9 border cursor-pointer hover:opacity-80 transition-opacity ml-1 sm:ml-0">
               <AvatarImage
                 src={`https://img.usecurling.com/ppl/thumbnail?seed=${user?.id || '1'}`}
-                alt={user?.name || 'User'}
+                alt={user?.user_metadata?.name || 'User'}
               />
-              <AvatarFallback>{user?.name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+              <AvatarFallback>
+                {user?.user_metadata?.name?.charAt(0).toUpperCase() || 'U'}
+              </AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
+            <DropdownMenuLabel>{user?.user_metadata?.name || 'Usuário'}</DropdownMenuLabel>
             <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
               {user?.email}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive cursor-pointer" onClick={() => logout()}>
+            <DropdownMenuItem className="text-destructive cursor-pointer" onClick={() => signOut()}>
               <LogOut className="h-4 w-4 mr-2" />
               Sair (Logout)
             </DropdownMenuItem>

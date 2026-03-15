@@ -11,6 +11,7 @@ export interface Lead {
   stage: LeadStage
   created_at: string
   updated_at: string
+  lgpd_consent?: boolean
 }
 
 export const COLUMNS: { id: LeadStage; title: string; color: string }[] = [
