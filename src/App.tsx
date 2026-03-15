@@ -7,6 +7,7 @@ import Chat from './pages/Chat'
 import NotFound from './pages/NotFound'
 import Login from './pages/Login'
 import Layout from './components/Layout'
+import AnaliseOrigem from './pages/AnaliseOrigem'
 import { LeadProvider } from './stores/useLeadStore'
 import { AuthProvider } from './stores/useAuthStore'
 import { WhatsAppProvider } from './stores/useWhatsAppStore'
@@ -32,6 +33,7 @@ const App = () => (
               >
                 <Route index element={<Index />} />
                 <Route path="chat" element={<Chat />} />
+                <Route path="analise-origem" element={<AnaliseOrigem />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

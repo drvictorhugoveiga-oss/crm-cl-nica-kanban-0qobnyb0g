@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Activity, LayoutDashboard, Settings, Users, MessageCircle } from 'lucide-react'
+import { Activity, LayoutDashboard, Settings, Users, MessageCircle, PieChart } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -14,6 +14,7 @@ import {
 const items = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Leads Kanban', url: '/', icon: Users },
+  { title: 'Análise de Origem', url: '/analise-origem', icon: PieChart },
   { title: 'WhatsApp Chat', url: '/chat', icon: MessageCircle },
   { title: 'Analytics', url: '/analytics', icon: Activity },
   { title: 'Configurações', url: '/settings', icon: Settings },

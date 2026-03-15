@@ -9,7 +9,36 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      messages: {
+        Row: {
+          direction: string
+          id: string
+          lead_id: string | null
+          message_text: string
+          phone: string
+          read: boolean
+          timestamp: string
+        }
+        Insert: {
+          direction: string
+          id?: string
+          lead_id?: string | null
+          message_text: string
+          phone: string
+          read?: boolean
+          timestamp?: string
+        }
+        Update: {
+          direction?: string
+          id?: string
+          lead_id?: string | null
+          message_text?: string
+          phone?: string
+          read?: boolean
+          timestamp?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -153,6 +182,29 @@ export const Constants = {
 // IMPORTANT: The TypeScript types above map UUID, TEXT, VARCHAR all to "string".
 // Use the COLUMN TYPES section below to know the real PostgreSQL type for each column.
 // Always use the correct PostgreSQL type when writing SQL migrations.
+
+// --- COLUMN TYPES (actual PostgreSQL types) ---
+// Use this to know the real database type when writing migrations.
+// "string" in TypeScript types above may be uuid, text, varchar, timestamptz, etc.
+// Table: messages
+//   id: uuid (not null, default: gen_random_uuid())
+//   lead_id: uuid (nullable)
+//   phone: text (not null)
+//   message_text: text (not null)
+//   direction: text (not null)
+//   timestamp: timestamp with time zone (not null, default: now())
+//   read: boolean (not null, default: false)
+
+// --- CONSTRAINTS ---
+// Table: messages
+//   CHECK messages_direction_check: CHECK ((direction = ANY (ARRAY['incoming'::text, 'outgoing'::text])))
+//   PRIMARY KEY messages_pkey: PRIMARY KEY (id)
+
+// --- ROW LEVEL SECURITY POLICIES ---
+// Table: messages
+//   Policy "Enable all access for authenticated users" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
 
 // --- DATABASE FUNCTIONS ---
 // FUNCTION rls_auto_enable()
