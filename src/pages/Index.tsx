@@ -1,10 +1,15 @@
-/* Home Page - Replace this page layout, components, content, behavior with what you want and translate to the language of the user */
+import { KanbanBoard } from '@/components/KanbanBoard'
+
 const Index = () => {
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-6">
-        This is a example page ready to be rewritten with your own content
-      </h1>
+    <div className="h-full w-full flex flex-col animate-fade-in bg-[#F8FAFC]">
+      <div className="px-6 py-5 hidden sm:block shrink-0">
+        <h1 className="text-2xl font-bold text-slate-800">Funil de Atendimento</h1>
+        <p className="text-slate-500 text-sm mt-1">
+          Gerencie a jornada dos seus pacientes arrastando os cards.
+        </p>
+      </div>
+      <KanbanBoard />
     </div>
   )
 }
