@@ -18,32 +18,32 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 const App = () => (
   <BrowserRouter>
     <AuthProvider>
-      <LeadProvider>
-        <WhatsAppProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <LeadProvider>
+                  <WhatsAppProvider>
                     <Layout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<Index />} />
-                <Route path="chat" element={<Chat />} />
-                <Route path="analise-origem" element={<AnaliseOrigem />} />
-                <Route path="politica-privacidade" element={<PrivacyPolicy />} />
-                <Route path="configuracoes-privacidade" element={<PrivacySettings />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </TooltipProvider>
-        </WhatsAppProvider>
-      </LeadProvider>
+                  </WhatsAppProvider>
+                </LeadProvider>
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Index />} />
+            <Route path="chat" element={<Chat />} />
+            <Route path="analise-origem" element={<AnaliseOrigem />} />
+            <Route path="politica-privacidade" element={<PrivacyPolicy />} />
+            <Route path="configuracoes-privacidade" element={<PrivacySettings />} />
+          </Route>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </TooltipProvider>
     </AuthProvider>
   </BrowserRouter>
 )

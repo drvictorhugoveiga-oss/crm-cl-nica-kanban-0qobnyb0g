@@ -19,7 +19,7 @@ interface LeadStore {
   setSearchQuery: (query: string) => void
   sourceFilter: string
   setSourceFilter: (source: string) => void
-  fetchLeads: () => Promise<void>
+  fetchLeads: (signal?: AbortSignal) => Promise<void>
   addLead: (lead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>) => Promise<void>
   updateLeadStage: (id: string, newStage: LeadStage) => Promise<void>
   isLoading: boolean
@@ -49,49 +49,80 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   const [sourceFilter, setSourceFilter] = useState('all')
   const [isLoading, setIsLoading] = useState(false)
 
-  const fetchLeads = useCallback(async () => {
-    if (!user) return
-    setIsLoading(true)
-    try {
-      const { data, error } = await supabase
-        .from('leads')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+  const fetchLeads = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!user) return
+      setIsLoading(true)
+      try {
+        const query = supabase
+          .from('leads')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
 
-      if (error) {
-        toast.error('Erro ao carregar leads: ' + error.message)
-        return
+        if (signal) {
+          query.abortSignal(signal)
+        }
+
+        const { data, error } = await query
+
+        if (signal?.aborted) return
+
+        if (error) {
+          toast.error('Erro ao carregar leads: ' + error.message)
+          return
+        }
+
+        if (data) {
+          const { data: decryptedData } = await supabase.functions.invoke(
+            'lgpd-encryption-handler',
+            {
+              body: { action: 'decrypt', items: data },
+            },
+          )
+
+          if (signal?.aborted) return
+          const rows = decryptedData?.result || data
+          setLeads(rows.map(mapRowToLead))
+        }
+
+        setOrigins([
+          { id: '1', name: 'Google Ads', description: 'Leads from Google Ads campaigns' },
+          { id: '2', name: 'Indicação', description: 'Referred by other patients' },
+          { id: '3', name: 'Redes Sociais', description: 'From Instagram, Facebook, etc' },
+          { id: '4', name: 'Visita Presencial', description: 'Walk-ins' },
+          { id: '5', name: 'WhatsApp', description: 'Contato via WhatsApp' },
+        ])
+      } catch (err: any) {
+        if (
+          signal?.aborted ||
+          err.name === 'AbortError' ||
+          err.message?.includes('Failed to fetch')
+        ) {
+          return
+        }
+        toast.error('Erro de conexão ao buscar dados.')
+      } finally {
+        if (!signal?.aborted) {
+          setIsLoading(false)
+        }
       }
-
-      if (data) {
-        const { data: decryptedData } = await supabase.functions.invoke('lgpd-encryption-handler', {
-          body: { action: 'decrypt', items: data },
-        })
-        const rows = decryptedData?.result || data
-        setLeads(rows.map(mapRowToLead))
-      }
-
-      setOrigins([
-        { id: '1', name: 'Google Ads', description: 'Leads from Google Ads campaigns' },
-        { id: '2', name: 'Indicação', description: 'Referred by other patients' },
-        { id: '3', name: 'Redes Sociais', description: 'From Instagram, Facebook, etc' },
-        { id: '4', name: 'Visita Presencial', description: 'Walk-ins' },
-        { id: '5', name: 'WhatsApp', description: 'Contato via WhatsApp' },
-      ])
-    } catch (err) {
-      toast.error('Erro de conexão ao buscar dados.')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [user])
+    },
+    [user],
+  )
 
   useEffect(() => {
+    const controller = new AbortController()
+
     if (user) {
-      fetchLeads()
+      fetchLeads(controller.signal)
     } else {
       setLeads([])
       setOrigins([])
+    }
+
+    return () => {
+      controller.abort()
     }
   }, [user, fetchLeads])
 
@@ -142,7 +173,6 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   const updateLeadStage = async (id: string, newStage: LeadStage) => {
     if (!user) return
 
-    // Optimistic update
     const previousLeads = [...leads]
     setLeads((prev) =>
       prev.map((lead) =>
@@ -153,7 +183,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     try {
       const { error } = await supabase.from('leads').update({ status: newStage }).eq('id', id)
       if (error) {
-        setLeads(previousLeads) // Revert on failure
+        setLeads(previousLeads)
         toast.error('Erro ao atualizar status do lead.')
         throw error
       }

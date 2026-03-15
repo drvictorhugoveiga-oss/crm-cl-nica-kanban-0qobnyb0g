@@ -38,25 +38,48 @@ export default function AnaliseOrigem() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const controller = new AbortController()
+
     const fetchLeads = async () => {
       if (!user) return
       setLoading(true)
       const date = new Date()
       date.setDate(date.getDate() - parseInt(timeframe))
 
-      const { data, error } = await supabase
-        .from('leads')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('created_at', date.toISOString())
+      try {
+        const { data, error } = await supabase
+          .from('leads')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('created_at', date.toISOString())
+          .abortSignal(controller.signal)
 
-      if (!error && data) {
-        setLeads(data as LeadData[])
+        if (controller.signal.aborted) return
+
+        if (!error && data) {
+          setLeads(data as LeadData[])
+        }
+      } catch (err: any) {
+        if (
+          controller.signal.aborted ||
+          err.name === 'AbortError' ||
+          err.message?.includes('Failed to fetch')
+        ) {
+          return
+        }
+        console.error('Failed to fetch analise origem leads:', err)
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false)
+        }
       }
-      setLoading(false)
     }
 
     fetchLeads()
+
+    return () => {
+      controller.abort()
+    }
   }, [timeframe, user])
 
   const chartConfig = {

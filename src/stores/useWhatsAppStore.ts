@@ -40,29 +40,54 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
   const { leads } = useLeadStore()
 
   useEffect(() => {
+    const controller = new AbortController()
+
+    const fetchMessages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('messages')
+          .select('*')
+          .order('timestamp', { ascending: true })
+          .abortSignal(controller.signal)
+
+        if (controller.signal.aborted) return
+
+        if (error) {
+          console.error('Error loading messages:', error)
+          return
+        }
+
+        if (data) {
+          setMessages(data as Message[])
+        }
+      } catch (err: any) {
+        if (
+          controller.signal.aborted ||
+          err.name === 'AbortError' ||
+          err.message?.includes('Failed to fetch')
+        ) {
+          return
+        }
+        console.error('Failed to fetch messages:', err)
+      }
+    }
+
     fetchMessages()
 
     const subscription = supabase
       .channel('messages_channel')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => {
-        fetchMessages()
+        if (!controller.signal.aborted) {
+          fetchMessages()
+        }
       })
       .subscribe()
 
     return () => {
+      controller.abort()
       subscription.unsubscribe()
     }
   }, [])
-
-  const fetchMessages = async () => {
-    const { data } = await supabase
-      .from('messages')
-      .select('*')
-      .order('timestamp', { ascending: true })
-    if (data) {
-      setMessages(data as Message[])
-    }
-  }
 
   const toggleSidebar = () => setIsOpen((prev) => !prev)
 
