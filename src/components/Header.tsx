@@ -1,4 +1,4 @@
-import { LogOut, Bell, Plus, Search } from 'lucide-react'
+import { LogOut, Bell, Plus, Search, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -7,6 +7,7 @@ import useLeadStore from '@/stores/useLeadStore'
 import { useState } from 'react'
 import { NewLeadDialog } from './NewLeadDialog'
 import useAuthStore from '@/stores/useAuthStore'
+import useWhatsAppStore from '@/stores/useWhatsAppStore'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,9 @@ export function Header() {
   const { searchQuery, setSearchQuery } = useLeadStore()
   const { user, logout } = useAuthStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const { toggleSidebar, chats } = useWhatsAppStore()
+
+  const unreadCount = chats.reduce((acc, chat) => acc + chat.unread, 0)
 
   return (
     <header className="h-16 border-b bg-white flex items-center justify-between px-4 sm:px-6 shrink-0 z-10 sticky top-0 shadow-sm">
@@ -36,13 +40,25 @@ export function Header() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3 sm:gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         <Button
           onClick={() => setIsModalOpen(true)}
           className="rounded-full shadow-subtle hover:scale-95 transition-transform"
         >
-          <Plus className="h-4 w-4 mr-1 sm:mr-2" />
+          <Plus className="h-4 w-4 sm:mr-2" />
           <span className="hidden sm:inline">Novo Lead</span>
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground hover:text-[#25D366] hover:bg-[#25D366]/10 relative ml-1 sm:ml-0"
+          onClick={toggleSidebar}
+        >
+          <MessageCircle className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+          )}
         </Button>
 
         <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
@@ -51,7 +67,7 @@ export function Header() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Avatar className="h-9 w-9 border cursor-pointer hover:opacity-80 transition-opacity">
+            <Avatar className="h-9 w-9 border cursor-pointer hover:opacity-80 transition-opacity ml-1 sm:ml-0">
               <AvatarImage
                 src={`https://img.usecurling.com/ppl/thumbnail?seed=${user?.id || '1'}`}
                 alt={user?.name || 'User'}
