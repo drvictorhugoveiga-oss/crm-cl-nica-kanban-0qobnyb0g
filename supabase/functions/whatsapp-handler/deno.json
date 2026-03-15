@@ -1,0 +1,8 @@
+{
+  "imports": {
+    "jsr:@supabase/functions-js": "jsr:@supabase/functions-js@^2.4.1",
+    "npm:@supabase/supabase-js": "npm:@supabase/supabase-js@^2.39.3",
+    "npm:@whiskeysockets/baileys": "npm:@whiskeysockets/baileys@^6.7.5",
+    "npm:pino": "npm:pino@^9.0.0"
+  }
+}

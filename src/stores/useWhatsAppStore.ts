@@ -1,10 +1,14 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react'
+import { supabase } from '@/lib/supabase/client'
+import useLeadStore from './useLeadStore'
 
 export interface Message {
   id: string
-  text: string
+  phone: string
+  message_text: string
+  direction: 'incoming' | 'outgoing'
   timestamp: string
-  isSent: boolean
+  read: boolean
 }
 
 export interface Chat {
@@ -23,106 +27,137 @@ interface WhatsAppStore {
   chats: Chat[]
   activeChatId: string | null
   setActiveChatId: (id: string | null) => void
-  sendMessage: (chatId: string, text: string) => void
+  sendMessage: (phone: string, text: string) => Promise<void>
 }
-
-const initialChats: Chat[] = [
-  {
-    id: '1',
-    leadName: 'Maria Silva',
-    phone: '+55 11 99999-1111',
-    lastMessage: 'Vou confirmar o horário sim, obrigada!',
-    lastMessageTime: '10:30',
-    unread: 2,
-    messages: [
-      {
-        id: 'm1',
-        text: 'Olá Maria, seu retorno está agendado para amanhã às 14h.',
-        timestamp: '10:00',
-        isSent: true,
-      },
-      { id: 'm2', text: 'Bom dia! Tudo bem?', timestamp: '10:15', isSent: false },
-      {
-        id: 'm3',
-        text: 'Vou confirmar o horário sim, obrigada!',
-        timestamp: '10:30',
-        isSent: false,
-      },
-    ],
-  },
-  {
-    id: '2',
-    leadName: 'João Santos',
-    phone: '+55 11 99999-2222',
-    lastMessage: 'Qual o valor da consulta?',
-    lastMessageTime: 'Ontem',
-    unread: 1,
-    messages: [
-      {
-        id: 'm1',
-        text: 'Boa tarde, João. Vi que você tem interesse em agendar uma avaliação.',
-        timestamp: '14:00',
-        isSent: true,
-      },
-      { id: 'm2', text: 'Qual o valor da consulta?', timestamp: '14:30', isSent: false },
-    ],
-  },
-  {
-    id: '3',
-    leadName: 'Ana Oliveira',
-    phone: '+55 11 99999-3333',
-    lastMessage: 'Ok, combinado.',
-    lastMessageTime: 'Segunda',
-    unread: 0,
-    messages: [
-      {
-        id: 'm1',
-        text: 'Ana, os resultados dos seus exames já estão disponíveis.',
-        timestamp: '09:00',
-        isSent: true,
-      },
-      { id: 'm2', text: 'Ok, combinado.', timestamp: '09:15', isSent: false },
-    ],
-  },
-]
 
 const WhatsAppContext = createContext<WhatsAppStore | undefined>(undefined)
 
 export function WhatsAppProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [chats, setChats] = useState<Chat[]>(initialChats)
+  const [messages, setMessages] = useState<Message[]>([])
   const [activeChatId, setActiveChatIdState] = useState<string | null>(null)
 
-  const toggleSidebar = () => setIsOpen((prev) => !prev)
+  const { leads } = useLeadStore()
 
-  const setActiveChatId = (id: string | null) => {
-    setActiveChatIdState(id)
-    if (id) {
-      setChats((prev) => prev.map((chat) => (chat.id === id ? { ...chat, unread: 0 } : chat)))
+  useEffect(() => {
+    fetchMessages()
+
+    const subscription = supabase
+      .channel('messages_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => {
+        fetchMessages()
+      })
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  const fetchMessages = async () => {
+    const { data } = await supabase
+      .from('messages')
+      .select('*')
+      .order('timestamp', { ascending: true })
+    if (data) {
+      setMessages(data as Message[])
     }
   }
 
-  const sendMessage = (chatId: string, text: string) => {
-    setChats((prev) =>
-      prev.map((chat) => {
-        if (chat.id === chatId) {
-          const newMessage: Message = {
-            id: Date.now().toString(),
-            text,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isSent: true,
-          }
-          return {
-            ...chat,
-            messages: [...chat.messages, newMessage],
-            lastMessage: text,
-            lastMessageTime: newMessage.timestamp,
-          }
-        }
-        return chat
-      }),
-    )
+  const toggleSidebar = () => setIsOpen((prev) => !prev)
+
+  const setActiveChatId = async (id: string | null) => {
+    setActiveChatIdState(id)
+    if (id) {
+      await supabase
+        .from('messages')
+        .update({ read: true })
+        .eq('phone', id)
+        .eq('direction', 'incoming')
+        .eq('read', false)
+      setMessages((prev) =>
+        prev.map((m) => (m.phone === id && m.direction === 'incoming' ? { ...m, read: true } : m)),
+      )
+    }
   }
+
+  const sendMessage = async (phone: string, text: string) => {
+    const tempMsg: Message = {
+      id: Date.now().toString(),
+      phone,
+      message_text: text,
+      direction: 'outgoing',
+      timestamp: new Date().toISOString(),
+      read: true,
+    }
+    setMessages((prev) => [...prev, tempMsg])
+
+    const { error } = await supabase.functions.invoke('whatsapp-handler', {
+      body: { action: 'send', phone, message: text },
+    })
+
+    if (error) {
+      console.error('Failed to send message:', error)
+    }
+  }
+
+  const chatsMap = new Map<string, Chat>()
+
+  leads.forEach((lead) => {
+    const digits = lead.phone.replace(/\D/g, '')
+    if (digits) {
+      chatsMap.set(digits, {
+        id: digits,
+        leadName: lead.name,
+        phone: lead.phone,
+        lastMessage: '',
+        lastMessageTime: '',
+        unread: 0,
+        messages: [],
+      })
+    }
+  })
+
+  messages.forEach((msg) => {
+    const phone = msg.phone
+    const existing = chatsMap.get(phone)
+    const leadMatch = leads.find((l) => l.phone.replace(/\D/g, '') === phone)
+    const leadName = leadMatch ? leadMatch.name : phone
+    const time = new Date(msg.timestamp).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+
+    if (existing) {
+      existing.messages.push(msg)
+      existing.lastMessage = msg.message_text
+      existing.lastMessageTime = time
+      if (msg.direction === 'incoming' && !msg.read) {
+        existing.unread += 1
+      }
+      if (!existing.leadName || existing.leadName === phone) {
+        existing.leadName = leadName
+      }
+    } else {
+      chatsMap.set(phone, {
+        id: phone,
+        leadName: leadName,
+        phone: phone,
+        lastMessage: msg.message_text,
+        lastMessageTime: time,
+        unread: msg.direction === 'incoming' && !msg.read ? 1 : 0,
+        messages: [msg],
+      })
+    }
+  })
+
+  const chats = Array.from(chatsMap.values()).sort((a, b) => {
+    const aTime =
+      a.messages.length > 0 ? new Date(a.messages[a.messages.length - 1].timestamp).getTime() : 0
+    const bTime =
+      b.messages.length > 0 ? new Date(b.messages[b.messages.length - 1].timestamp).getTime() : 0
+    return bTime - aTime
+  })
 
   return React.createElement(
     WhatsAppContext.Provider,

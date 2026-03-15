@@ -87,17 +87,31 @@ export function WhatsAppSidebar() {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4 relative bg-[#EFEAE2]" ref={scrollRef}>
           {activeChat.messages.map((msg) => (
-            <div key={msg.id} className={cn('flex', msg.isSent ? 'justify-end' : 'justify-start')}>
+            <div
+              key={msg.id}
+              className={cn('flex', msg.direction === 'outgoing' ? 'justify-end' : 'justify-start')}
+            >
               <div
                 className={cn(
                   'max-w-[85%] rounded-lg p-2.5 shadow-sm text-sm relative group animate-fade-in-up',
-                  msg.isSent ? 'bg-[#D9FDD3] rounded-tr-sm' : 'bg-white rounded-tl-sm',
+                  msg.direction === 'outgoing'
+                    ? 'bg-[#D9FDD3] rounded-tr-sm'
+                    : 'bg-white rounded-tl-sm',
                 )}
               >
-                <p className="text-[#111B21] pr-2 pb-1.5 leading-relaxed">{msg.text}</p>
+                <p className="text-[#111B21] pr-2 pb-1.5 leading-relaxed">{msg.message_text}</p>
                 <div className="flex items-center justify-end gap-1 -mt-1">
-                  <span className="text-[10px] text-slate-500">{msg.timestamp}</span>
-                  {msg.isSent && <CheckCheck className="h-3.5 w-3.5 text-[#53BDEB]" />}
+                  <span className="text-[10px] text-slate-500">
+                    {msg.timestamp
+                      ? new Date(msg.timestamp).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                      : ''}
+                  </span>
+                  {msg.direction === 'outgoing' && (
+                    <CheckCheck className="h-3.5 w-3.5 text-[#53BDEB]" />
+                  )}
                 </div>
               </div>
             </div>
