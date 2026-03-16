@@ -24,6 +24,7 @@ interface LeadStore {
   fetchLeads: () => Promise<void>
   addLead: (lead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>) => Promise<void>
   updateLeadStage: (id: string, newStage: LeadStage) => Promise<void>
+  deleteLead: (id: string) => Promise<void>
   isLoading: boolean
 }
 
@@ -107,7 +108,9 @@ export function LeadProvider({ children }: { children: ReactNode }) {
           msg.includes('http n/a')
 
         if (!isAbortError) {
-          toast.error('Erro ao carregar leads: ' + (error.message || 'Erro desconhecido'))
+          toast.error('Erro ao carregar leads: ' + (error.message || 'Erro desconhecido'), {
+            duration: 4000,
+          })
         }
         return
       }
@@ -203,7 +206,12 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       .insert(encryptedData?.result?.[0] || rowToInsert)
       .select()
       .single()
-    if (error) throw error
+
+    if (error) {
+      toast.error('Erro ao adicionar lead', { duration: 4000 })
+      throw error
+    }
+
     if (data) {
       const inserted = {
         ...newLead,
@@ -218,7 +226,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         /* ignore */
       }
-      toast.success('Lead adicionado com sucesso!')
+      toast.success('Lead adicionado com sucesso!', { duration: 3000 })
       await logAudit(user.id, 'Created Lead', { lead_id: data.id, source: newLead.origin })
     }
   }
@@ -256,12 +264,44 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         /* ignore */
       }
-      toast.error('Erro ao atualizar status')
+      toast.error('Erro ao atualizar status do lead', { duration: 4000 })
       return
     }
 
     toast.success('Status atualizado com sucesso!', { duration: 2500, position: 'bottom-right' })
     await logAudit(user.id, 'Updated Lead Stage', { lead_id: id, new_stage: newStage })
+  }
+
+  const deleteLead = async (id: string) => {
+    if (!user?.id) return
+
+    const prevLeads = [...leads]
+    const newLeads = prevLeads.filter((l) => l.id !== id)
+
+    // Optimistically update UI
+    setLeads(newLeads)
+    try {
+      localStorage.setItem(`crm_leads_${user.id}`, JSON.stringify(newLeads))
+    } catch (e) {
+      /* ignore */
+    }
+
+    const { error } = await supabase.from('leads').delete().eq('id', id).eq('user_id', user.id)
+
+    if (error) {
+      // Revert optimistic update
+      setLeads(prevLeads)
+      try {
+        localStorage.setItem(`crm_leads_${user.id}`, JSON.stringify(prevLeads))
+      } catch (e) {
+        /* ignore */
+      }
+      toast.error('Erro ao excluir lead', { duration: 4000 })
+      return
+    }
+
+    toast.success('Lead excluído com sucesso!', { duration: 3000 })
+    await logAudit(user.id, 'Deleted Lead', { lead_id: id })
   }
 
   const value = React.useMemo(
@@ -275,6 +315,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       fetchLeads,
       addLead,
       updateLeadStage,
+      deleteLead,
       isLoading,
     }),
     [leads, origins, searchQuery, sourceFilter, fetchLeads, isLoading],

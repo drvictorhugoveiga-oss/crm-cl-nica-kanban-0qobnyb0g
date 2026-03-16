@@ -93,7 +93,7 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
     const cleanTitle = title.trim()
 
     if (columns.some((c) => c.title.toLowerCase() === cleanTitle.toLowerCase())) {
-      toast.error('Já existe uma coluna com este nome')
+      toast.error('Já existe uma coluna com este nome', { duration: 3000 })
       return
     }
 
@@ -106,14 +106,14 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
 
     if (error) {
       if (error.code === '23505') {
-        toast.error('Já existe uma coluna com este nome')
+        toast.error('Já existe uma coluna com este nome', { duration: 3000 })
       } else {
-        toast.error('Erro ao criar coluna')
+        toast.error('Erro ao criar coluna', { duration: 4000 })
       }
       return
     }
     setColumns((prev) => [...prev, data])
-    toast.success('Coluna adicionada')
+    toast.success('Coluna adicionada com sucesso!', { duration: 3000 })
   }
 
   const updateColumn = async (id: string, title: string, color: string) => {
@@ -126,7 +126,7 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
     )
 
     if (isDuplicate) {
-      toast.error('Já existe outra coluna com este nome')
+      toast.error('Já existe outra coluna com este nome', { duration: 3000 })
       return
     }
 
@@ -139,9 +139,9 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
 
     if (error) {
       if (error.code === '23505') {
-        toast.error('Já existe uma coluna com este nome')
+        toast.error('Já existe uma coluna com este nome', { duration: 3000 })
       } else {
-        toast.error('Erro ao atualizar coluna')
+        toast.error('Erro ao atualizar coluna', { duration: 4000 })
       }
       return
     }
@@ -156,7 +156,7 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
         .eq('user_id', user.id)
       fetchLeads()
     }
-    toast.success('Coluna atualizada')
+    toast.success('Coluna atualizada com sucesso!', { duration: 3000 })
   }
 
   const deleteColumn = async (id: string) => {
@@ -166,7 +166,7 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
 
     const { error } = await supabase.from('kanban_columns').delete().eq('id', id)
     if (error) {
-      toast.error('Erro ao deletar coluna')
+      toast.error('Erro ao deletar coluna', { duration: 4000 })
       return
     }
 
@@ -177,7 +177,7 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
       .eq('user_id', user.id)
     setColumns((prev) => prev.filter((c) => c.id !== id))
     fetchLeads()
-    toast.success('Coluna excluída e leads movidos')
+    toast.success('Coluna excluída e leads movidos', { duration: 3000 })
   }
 
   const reorderColumns = async (sourceId: string, targetId: string) => {
@@ -192,9 +192,17 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
     const updated = newCols.map((c, idx) => ({ ...c, position: idx }))
     setColumns(updated)
 
-    updated.forEach((col) => {
-      supabase.from('kanban_columns').update({ position: col.position }).eq('id', col.id).then()
-    })
+    Promise.all(
+      updated.map((col) =>
+        supabase.from('kanban_columns').update({ position: col.position }).eq('id', col.id),
+      ),
+    )
+      .then(() => {
+        toast.success('Colunas reordenadas com sucesso!', { duration: 3000 })
+      })
+      .catch(() => {
+        toast.error('Erro ao reordenar colunas no banco de dados', { duration: 4000 })
+      })
   }
 
   return (

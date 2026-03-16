@@ -33,7 +33,9 @@ import useLeadStore from '@/stores/useLeadStore'
 
 const leadSchema = z.object({
   name: z.string().min(2, 'O nome deve ter no mínimo 2 caracteres.'),
-  phone: z.string().regex(/^\+?[0-9\s\-()]{10,15}$/, 'Formato de telefone inválido.'),
+  phone: z
+    .string()
+    .regex(/^\+?[0-9\s\-()]{10,15}$/, 'Formato de telefone inválido. Ex: (11) 99999-9999'),
   email: z.string().email('E-mail inválido.').or(z.literal('')),
   origin: z.string().min(1, 'Selecione uma origem.'),
   lgpd_consent: z.boolean().default(false),
@@ -53,6 +55,7 @@ export function NewLeadDialog({
 
   const form = useForm<LeadFormValues>({
     resolver: zodResolver(leadSchema),
+    mode: 'onChange',
     defaultValues: {
       name: '',
       phone: '',
@@ -71,14 +74,14 @@ export function NewLeadDialog({
         phone: data.phone,
         email: data.email,
         origin: data.origin,
-        stage: 'novo_contato',
+        stage: 'novo_contato', // Note: this will be mapped to the first column if missing
         contact_date: new Date().toISOString().split('T')[0],
         lgpd_consent: data.lgpd_consent,
       })
       onOpenChange(false)
       form.reset()
     } catch (err) {
-      // Error is handled in the store
+      // Error is handled in the store by showing toast
     } finally {
       setLoading(false)
     }
@@ -108,9 +111,13 @@ export function NewLeadDialog({
                 <FormItem>
                   <FormLabel>Nome do Paciente</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: João da Silva" className="h-11 sm:h-10" {...field} />
+                    <Input
+                      placeholder="Ex: João da Silva"
+                      className="h-11 sm:h-10 transition-all duration-300 ease-in-out focus-visible:ring-primary/50"
+                      {...field}
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="animate-in fade-in slide-in-from-top-1" />
                 </FormItem>
               )}
             />
@@ -123,9 +130,13 @@ export function NewLeadDialog({
                   <FormItem>
                     <FormLabel>WhatsApp / Telefone</FormLabel>
                     <FormControl>
-                      <Input placeholder="(11) 99999-9999" className="h-11 sm:h-10" {...field} />
+                      <Input
+                        placeholder="(11) 99999-9999"
+                        className="h-11 sm:h-10 transition-all duration-300 ease-in-out focus-visible:ring-primary/50"
+                        {...field}
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="animate-in fade-in slide-in-from-top-1" />
                   </FormItem>
                 )}
               />
@@ -140,11 +151,11 @@ export function NewLeadDialog({
                       <Input
                         placeholder="joao@email.com"
                         type="email"
-                        className="h-11 sm:h-10"
+                        className="h-11 sm:h-10 transition-all duration-300 ease-in-out focus-visible:ring-primary/50"
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="animate-in fade-in slide-in-from-top-1" />
                   </FormItem>
                 )}
               />
@@ -158,7 +169,7 @@ export function NewLeadDialog({
                   <FormLabel>Origem do Lead</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger className="h-11 sm:h-10">
+                      <SelectTrigger className="h-11 sm:h-10 transition-all duration-300 ease-in-out focus-visible:ring-primary/50">
                         <SelectValue placeholder="Selecione a origem" />
                       </SelectTrigger>
                     </FormControl>
@@ -170,7 +181,7 @@ export function NewLeadDialog({
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormMessage />
+                  <FormMessage className="animate-in fade-in slide-in-from-top-1" />
                 </FormItem>
               )}
             />
@@ -179,7 +190,7 @@ export function NewLeadDialog({
               control={form.control}
               name="lgpd_consent"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl border border-slate-200 bg-slate-50/50 p-4 mt-2 hover:bg-slate-50 transition-colors cursor-pointer">
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl border border-slate-200 bg-slate-50/50 p-4 mt-2 hover:bg-slate-50 transition-all duration-300 ease-in-out cursor-pointer">
                   <FormControl>
                     <Checkbox
                       checked={field.value}
@@ -205,14 +216,14 @@ export function NewLeadDialog({
                 type="button"
                 variant="outline"
                 onClick={() => handleOpenChange(false)}
-                className="h-11 sm:h-10 w-full sm:w-auto rounded-xl sm:rounded-md"
+                className="h-11 sm:h-10 w-full sm:w-auto rounded-xl sm:rounded-md transition-all duration-300 ease-in-out hover:bg-slate-100"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                disabled={loading}
-                className="h-11 sm:h-10 w-full sm:w-auto rounded-xl sm:rounded-md"
+                disabled={loading || !form.formState.isValid}
+                className="h-11 sm:h-10 w-full sm:w-auto rounded-xl sm:rounded-md transition-all duration-300 ease-in-out"
               >
                 {loading ? 'Salvando...' : 'Salvar Lead'}
               </Button>
