@@ -88,7 +88,11 @@ export function LeadProvider({ children }: { children: ReactNode }) {
         if (signal?.aborted) return
 
         if (error) {
-          if (error.name !== 'AbortError' && !error.message?.includes('Aborted')) {
+          if (
+            error.name !== 'AbortError' &&
+            !error.message?.includes('Aborted') &&
+            !error.message?.includes('HTTP N/A')
+          ) {
             toast.error('Erro ao carregar leads: ' + error.message)
           }
           return
@@ -132,7 +136,14 @@ export function LeadProvider({ children }: { children: ReactNode }) {
           { id: '5', name: 'WhatsApp', description: 'WhatsApp' },
         ])
       } catch (err: any) {
-        if (signal?.aborted || err.name === 'AbortError') return
+        if (
+          signal?.aborted ||
+          err.name === 'AbortError' ||
+          err.message?.includes('Aborted') ||
+          err.message?.includes('HTTP N/A')
+        ) {
+          return
+        }
         console.error('Unhandled error in fetchLeads:', err)
       } finally {
         if (!signal?.aborted) setIsLoading(false)
