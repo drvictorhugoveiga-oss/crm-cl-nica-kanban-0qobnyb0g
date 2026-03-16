@@ -11,7 +11,7 @@ interface KanbanColumnProps {
 }
 
 export function KanbanColumn({ column }: KanbanColumnProps) {
-  const { leads, updateLeadStage, searchQuery, sourceFilter, isLoading } = useLeadStore()
+  const { leads, updateLeadStage, searchQuery, sourceFilter, dateRange, isLoading } = useLeadStore()
   const { reorderColumns } = useKanbanStore()
   const [isOver, setIsOver] = useState(false)
   const dragCounter = useRef(0)
@@ -28,7 +28,24 @@ export function KanbanColumn({ column }: KanbanColumnProps) {
 
     const matchesSource = sourceFilter === 'all' || lead.origin === sourceFilter
 
-    return matchesSearch && matchesSource
+    let matchesDate = true
+    if (dateRange?.from) {
+      const leadDate = new Date(lead.created_at)
+      const from = new Date(dateRange.from)
+      from.setHours(0, 0, 0, 0)
+
+      if (leadDate < from) {
+        matchesDate = false
+      } else if (dateRange.to) {
+        const to = new Date(dateRange.to)
+        to.setHours(23, 59, 59, 999)
+        if (leadDate > to) {
+          matchesDate = false
+        }
+      }
+    }
+
+    return matchesSearch && matchesSource && matchesDate
   })
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
@@ -102,7 +119,7 @@ export function KanbanColumn({ column }: KanbanColumnProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto kanban-scroll p-3 pt-0 flex flex-col gap-3 min-h-[150px] touch-pan-y">
-        {isLoading && leads.length === 0 && !searchQuery && sourceFilter === 'all' ? (
+        {isLoading && leads.length === 0 && !searchQuery && sourceFilter === 'all' && !dateRange ? (
           <>
             <div className="rounded-xl border border-slate-200/60 bg-white p-4 shadow-sm animate-pulse">
               <Skeleton className="h-5 w-3/4 mb-3" />
@@ -116,7 +133,7 @@ export function KanbanColumn({ column }: KanbanColumnProps) {
           </>
         ) : columnLeads.length === 0 ? (
           <div className="h-28 rounded-xl border-2 border-dashed border-slate-300/70 flex flex-col items-center justify-center text-center p-4 animate-fade-in bg-white/50 transition-all duration-300 ease-in-out">
-            {searchQuery || sourceFilter !== 'all' ? (
+            {searchQuery || sourceFilter !== 'all' || dateRange ? (
               <>
                 <span className="text-sm text-slate-500 font-medium">Nenhum lead encontrado</span>
                 <span className="text-xs text-slate-400 mt-1">Verifique sua busca ou filtros</span>

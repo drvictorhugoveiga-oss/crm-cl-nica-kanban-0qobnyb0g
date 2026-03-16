@@ -14,6 +14,8 @@ import { logAudit } from '@/services/audit'
 import { toast } from 'sonner'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 
+export type DateRange = { from?: Date; to?: Date }
+
 interface LeadStore {
   leads: Lead[]
   origins: LeadOrigin[]
@@ -21,6 +23,13 @@ interface LeadStore {
   setSearchQuery: (query: string) => void
   sourceFilter: string
   setSourceFilter: (source: string) => void
+  dateRange: DateRange | undefined
+  setDateRange: (range: DateRange | undefined) => void
+  selectedStages: string[]
+  setSelectedStages: (stages: string[]) => void
+  saveFilters: () => void
+  loadFilters: () => void
+  clearFilters: () => void
   fetchLeads: () => Promise<void>
   addLead: (lead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>) => Promise<void>
   updateLeadStage: (id: string, newStage: LeadStage) => Promise<void>
@@ -52,9 +61,60 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   const [origins, setOrigins] = useState<LeadOrigin[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [sourceFilter, setSourceFilter] = useState('all')
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
+  const [selectedStages, setSelectedStages] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
   const abortControllerRef = useRef<AbortController | null>(null)
+
+  const saveFilters = useCallback(() => {
+    const filters = {
+      searchQuery,
+      sourceFilter,
+      selectedStages,
+      dateRange: dateRange
+        ? {
+            from: dateRange.from?.toISOString(),
+            to: dateRange.to?.toISOString(),
+          }
+        : undefined,
+    }
+    localStorage.setItem('crm_kanban_filters', JSON.stringify(filters))
+    toast.success('Filtros salvos com sucesso!', { duration: 3000 })
+  }, [searchQuery, sourceFilter, selectedStages, dateRange])
+
+  const loadFilters = useCallback(() => {
+    const saved = localStorage.getItem('crm_kanban_filters')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        setSearchQuery(parsed.searchQuery || '')
+        setSourceFilter(parsed.sourceFilter || 'all')
+        setSelectedStages(parsed.selectedStages || [])
+        if (parsed.dateRange) {
+          setDateRange({
+            from: parsed.dateRange.from ? new Date(parsed.dateRange.from) : undefined,
+            to: parsed.dateRange.to ? new Date(parsed.dateRange.to) : undefined,
+          })
+        } else {
+          setDateRange(undefined)
+        }
+        toast.success('Filtros carregados com sucesso!', { duration: 3000 })
+      } catch (e) {
+        toast.error('Erro ao carregar filtros salvos.', { duration: 3000 })
+      }
+    } else {
+      toast.info('Nenhum filtro salvo encontrado.', { duration: 3000 })
+    }
+  }, [])
+
+  const clearFilters = useCallback(() => {
+    setSearchQuery('')
+    setSourceFilter('all')
+    setSelectedStages([])
+    setDateRange(undefined)
+    toast.info('Filtros limpos.', { duration: 2000 })
+  }, [])
 
   const fetchLeads = useCallback(async () => {
     if (!user?.id) return
@@ -310,13 +370,32 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       setSearchQuery,
       sourceFilter,
       setSourceFilter,
+      dateRange,
+      setDateRange,
+      selectedStages,
+      setSelectedStages,
+      saveFilters,
+      loadFilters,
+      clearFilters,
       fetchLeads,
       addLead,
       updateLeadStage,
       deleteLead,
       isLoading,
     }),
-    [leads, origins, searchQuery, sourceFilter, fetchLeads, isLoading],
+    [
+      leads,
+      origins,
+      searchQuery,
+      sourceFilter,
+      dateRange,
+      selectedStages,
+      saveFilters,
+      loadFilters,
+      clearFilters,
+      fetchLeads,
+      isLoading,
+    ],
   )
   return <LeadContext.Provider value={value}>{children}</LeadContext.Provider>
 }
