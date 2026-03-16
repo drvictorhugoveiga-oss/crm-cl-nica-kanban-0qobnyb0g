@@ -40,11 +40,16 @@ export function AIInsightsPanel() {
         .order('created_at', { ascending: false })
         .limit(5)
 
-      if (error) throw error
-      setSuggestions(data as SuggestionWithLead[])
-    } catch (err) {
-      console.error(err)
-      toast.error('Erro ao carregar insights da IA.')
+      if (error) {
+        console.warn('Database error fetching suggestions:', error.message || error)
+        return
+      }
+
+      if (data) {
+        setSuggestions(data as SuggestionWithLead[])
+      }
+    } catch (err: any) {
+      console.warn('Failed to load AI insights:', err.message || err)
     } finally {
       setLoading(false)
     }
@@ -58,13 +63,26 @@ export function AIInsightsPanel() {
     setAnalyzing(true)
     try {
       const { data, error } = await supabase.functions.invoke('gemini-analysis-handler')
-      if (error) throw error
-      if (data?.error) throw new Error(data.error)
+
+      if (error) {
+        console.warn('Edge Function Error (Gemini):', error.message || error)
+        toast.error(
+          'Serviço de IA temporariamente indisponível. A funcionalidade será restaurada em breve.',
+        )
+        return
+      }
+
+      if (data?.error) {
+        console.warn('Gemini Analysis Error:', data.error)
+        toast.error('Erro ao gerar insights. Verifique se há dados suficientes.')
+        return
+      }
+
       toast.success('Análise concluída com sucesso!')
       fetchSuggestions()
-    } catch (err) {
-      console.error(err)
-      toast.error('Erro ao gerar insights. Verifique se há dados suficientes ou tente novamente.')
+    } catch (err: any) {
+      console.warn('Unexpected error during Gemini analysis:', err.message || err)
+      toast.error('Erro de conexão ao solicitar insights da IA.')
     } finally {
       setAnalyzing(false)
     }
@@ -78,14 +96,21 @@ export function AIInsightsPanel() {
     }
 
     try {
-      await supabase
+      const { error } = await supabase
         .from('ai_suggestions' as any)
         .update({ status: 'applied' })
         .eq('id', suggestion.id)
+
+      if (error) {
+        console.warn('Error applying AI action:', error.message || error)
+        toast.error('Não foi possível arquivar o insight no momento.')
+        return
+      }
+
       setSuggestions((prev) => prev.filter((s) => s.id !== suggestion.id))
       toast.success('Ação aplicada e insight arquivado!')
-    } catch (e) {
-      console.error(e)
+    } catch (e: any) {
+      console.warn('Exception applying AI action:', e.message || e)
       toast.error('Erro ao aplicar ação.')
     }
   }

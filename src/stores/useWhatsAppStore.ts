@@ -71,13 +71,18 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase.functions.invoke('whatsapp-handler', {
         body: { action: 'status' },
       })
-      if (error) throw error
+      if (error) {
+        console.warn('WhatsApp status check failed:', error.message || error)
+        setConnectionStatus('disconnected')
+        return
+      }
       if (data?.status) {
         setConnectionStatus(data.status)
         if (data.status === 'connected') setQrCode(null)
       }
-    } catch (err) {
-      console.error('Failed to check WhatsApp status', err)
+    } catch (err: any) {
+      console.warn('WhatsApp status check exception:', err.message || err)
+      setConnectionStatus('disconnected')
     }
   }, [])
 
@@ -87,7 +92,13 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase.functions.invoke('whatsapp-handler', {
         body: { action: 'start' },
       })
-      if (error) throw error
+
+      if (error) {
+        console.warn('WhatsApp connection start error:', error.message || error)
+        setConnectionStatus('disconnected')
+        toast.error('Serviço de WhatsApp temporariamente indisponível.')
+        return
+      }
 
       if (data?.qr) {
         setQrCode(data.qr)
@@ -98,9 +109,10 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
       } else {
         setConnectionStatus('disconnected')
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.warn('WhatsApp connection start exception:', err.message || err)
       setConnectionStatus('disconnected')
-      toast.error('Erro ao iniciar conexão com o WhatsApp.')
+      toast.error('Erro inesperado ao conectar ao WhatsApp.')
     }
   }
 
@@ -109,16 +121,22 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.functions.invoke('whatsapp-handler', {
         body: { action: 'logout' },
       })
-      if (error) throw error
+      if (error) {
+        console.warn('WhatsApp logout error:', error.message || error)
+        toast.error('Sessão encerrada localmente (serviço offline).')
+      } else {
+        toast.success('Sessão do WhatsApp encerrada.')
+      }
       setConnectionStatus('disconnected')
       setQrCode(null)
-      toast.success('Sessão do WhatsApp encerrada.')
-    } catch (err) {
-      toast.error('Erro ao desconectar.')
+    } catch (err: any) {
+      console.warn('WhatsApp logout exception:', err.message || err)
+      setConnectionStatus('disconnected')
+      setQrCode(null)
+      toast.error('Sessão encerrada (erro de conexão).')
     }
   }
 
-  // Poll connection status while connecting or showing QR
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>
     if (connectionStatus === 'qr' || connectionStatus === 'connecting') {
@@ -127,7 +145,6 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(interval)
   }, [connectionStatus, checkConnection])
 
-  // Initial status check
   useEffect(() => {
     checkConnection()
   }, [checkConnection])
@@ -159,6 +176,12 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
         )
         if (!controller.signal.aborted && !error && data) {
           setMessages(data as Message[])
+        } else if (error && !controller.signal.aborted) {
+          console.warn('Error fetching messages:', error.message || error)
+        }
+      } catch (err: any) {
+        if (!controller.signal.aborted) {
+          console.warn('Exception fetching messages:', err.message || err)
         }
       } finally {
         if (!controller.signal.aborted) setIsLoading(false)
@@ -240,10 +263,23 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase.functions.invoke('whatsapp-handler', {
         body: { action: 'send', phone, message: text },
       })
-      if (error) throw error
-      if (data?.error) throw new Error(data.error)
-    } catch (err) {
-      toast.error('Erro ao enviar mensagem.')
+
+      if (error) {
+        console.warn('WhatsApp send error:', error.message || error)
+        toast.error('Serviço indisponível. Mensagem não enviada.')
+        setMessages((prev) => prev.filter((m) => m.id !== tempId))
+        return
+      }
+
+      if (data?.error) {
+        console.warn('WhatsApp send returned error:', data.error)
+        toast.error('Falha ao enviar mensagem.')
+        setMessages((prev) => prev.filter((m) => m.id !== tempId))
+        return
+      }
+    } catch (err: any) {
+      console.warn('WhatsApp send exception:', err.message || err)
+      toast.error('Erro de conexão ao enviar mensagem.')
       setMessages((prev) => prev.filter((m) => m.id !== tempId))
     }
   }
