@@ -88,11 +88,12 @@ export function LeadProvider({ children }: { children: ReactNode }) {
         if (signal?.aborted) return
 
         if (error) {
-          if (
-            error.name !== 'AbortError' &&
-            !error.message?.includes('Aborted') &&
-            !error.message?.includes('HTTP N/A')
-          ) {
+          const isAbortError =
+            error.name === 'AbortError' ||
+            error.message?.includes('Aborted') ||
+            error.message?.includes('HTTP N/A')
+
+          if (!isAbortError) {
             toast.error('Erro ao carregar leads: ' + error.message)
           }
           return
@@ -122,7 +123,6 @@ export function LeadProvider({ children }: { children: ReactNode }) {
           } catch (invokeErr: any) {
             if (signal?.aborted || invokeErr.name === 'AbortError') return
             console.error('Decryption invoke failed:', invokeErr)
-            // Fallback to raw data if decryption fails
             const parsedLeads = data.map(mapRowToLead)
             setLeads(parsedLeads)
           }
@@ -203,14 +203,12 @@ export function LeadProvider({ children }: { children: ReactNode }) {
 
     const prevLeads = [...leads]
 
-    // Optimistic UI Update
     setLeads((prev) =>
       prev.map((l) =>
         l.id === id ? { ...l, stage: newStage, updated_at: new Date().toISOString() } : l,
       ),
     )
 
-    // Execute update respecting data integrity and user permissions
     const { error } = await supabase
       .from('leads')
       .update({ status: newStage })
@@ -218,7 +216,6 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       .eq('user_id', user.id)
 
     if (error) {
-      // Revert optimistic update
       setLeads(prevLeads)
       toast.error('Erro ao atualizar status do lead.')
       return
