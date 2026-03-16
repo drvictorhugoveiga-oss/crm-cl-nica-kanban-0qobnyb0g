@@ -40,6 +40,7 @@ export function AIInsightsPanel() {
 
       if (error) {
         console.warn('Database error fetching suggestions:', error.message || error)
+        setSuggestions([])
         return
       }
 

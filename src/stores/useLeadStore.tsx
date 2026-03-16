@@ -45,7 +45,6 @@ const LeadContext = createContext<LeadStore | undefined>(undefined)
 
 const mapRowToLead = (row: any): Lead & { value?: number; cost?: number } => {
   let stage = row.status as LeadStage
-  // Map old default statuses to proper UI formatting for backward compatibility
   if (stage === 'novo_contato') stage = 'Novo Contato'
   if (stage === 'agendado') stage = 'Agendado'
   if (stage === 'em_atendimento') stage = 'Em Atendimento'
@@ -255,15 +254,14 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       }
 
       if (data) {
+        let parsedLeads = data.map(mapRowToLead)
         try {
           const res = await supabase.functions.invoke('lgpd-encryption-handler', {
             body: { action: 'decrypt', items: data },
           })
-          if (signal.aborted) return
 
-          if (res.error) {
-            const msg = res.error.message?.toLowerCase() || ''
-            if (!msg.includes('abort') && res.error.name !== 'AbortError') {
+          if (!signal.aborted) {
+            if (res.error) {
               console.warn('Decryption invoke error:', res.error)
               toast({
                 title: 'Aviso de Segurança',
@@ -271,30 +269,31 @@ export function LeadProvider({ children }: { children: ReactNode }) {
                   'Serviço de criptografia indisponível ou inacessível. Os dados de contato podem estar ofuscados.',
                 variant: 'destructive',
               })
+            } else {
+              parsedLeads = (res.data?.result || data).map(mapRowToLead)
+            }
+            setLeads(parsedLeads)
+            try {
+              localStorage.setItem(CACHE_KEY, JSON.stringify(parsedLeads))
+            } catch (e) {
+              /* ignore */
             }
           }
-
-          const parsedLeads = (res.data?.result || data).map(mapRowToLead)
-          setLeads(parsedLeads)
-          try {
-            localStorage.setItem(CACHE_KEY, JSON.stringify(parsedLeads))
-          } catch (e) {
-            /* ignore */
-          }
         } catch (invokeErr: any) {
-          if (signal.aborted) return
-          const msg = invokeErr?.message?.toLowerCase() || ''
-          if (invokeErr?.name === 'AbortError' || msg.includes('abort')) {
-            return
+          if (!signal.aborted) {
+            console.warn('Decryption invoke failed globally:', invokeErr)
+            toast({
+              title: 'Aviso de Segurança',
+              description: 'Não foi possível conectar ao serviço de criptografia (LGPD).',
+              variant: 'destructive',
+            })
+            setLeads(parsedLeads)
+            try {
+              localStorage.setItem(CACHE_KEY, JSON.stringify(parsedLeads))
+            } catch (e) {
+              /* ignore */
+            }
           }
-          console.warn('Decryption invoke failed globally:', invokeErr)
-          toast({
-            title: 'Aviso de Segurança',
-            description: 'Não foi possível conectar ao serviço de criptografia (LGPD).',
-            variant: 'destructive',
-          })
-          const parsedLeads = data.map(mapRowToLead)
-          setLeads(parsedLeads)
         }
       }
 
@@ -378,7 +377,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       payloadToInsert = res.data.result[0]
     } catch (err) {
       console.error('Error in encryption pipeline:', err)
-      throw err // Stop execution, do not save unencrypted data
+      throw err
     }
 
     const { data, error } = await supabase.from('leads').insert(payloadToInsert).select().single()
