@@ -60,6 +60,41 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_history: {
+        Row: {
+          action_type: string
+          description: string | null
+          id: string
+          lead_id: string
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          description?: string | null
+          id?: string
+          lead_id: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          description?: string | null
+          id?: string
+          lead_id?: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'lead_history_lead_id_fkey'
+            columns: ['lead_id']
+            isOneToOne: false
+            referencedRelation: 'leads'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       leads: {
         Row: {
           cost: number | null
@@ -131,6 +166,38 @@ export type Database = {
           timestamp?: string
         }
         Relationships: []
+      }
+      notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          lead_id: string
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          lead_id: string
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          lead_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'notes_lead_id_fkey'
+            columns: ['lead_id']
+            isOneToOne: false
+            referencedRelation: 'leads'
+            referencedColumns: ['id']
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -310,6 +377,13 @@ export const Constants = {
 //   color: text (not null)
 //   position: integer (not null)
 //   created_at: timestamp with time zone (nullable, default: now())
+// Table: lead_history
+//   id: uuid (not null, default: gen_random_uuid())
+//   lead_id: uuid (not null)
+//   action_type: text (not null)
+//   description: text (nullable)
+//   timestamp: timestamp with time zone (not null, default: now())
+//   user_id: uuid (nullable)
 // Table: leads
 //   id: uuid (not null, default: gen_random_uuid())
 //   name: text (not null)
@@ -330,6 +404,12 @@ export const Constants = {
 //   direction: text (not null)
 //   timestamp: timestamp with time zone (not null, default: now())
 //   read: boolean (not null, default: false)
+// Table: notes
+//   id: uuid (not null, default: gen_random_uuid())
+//   lead_id: uuid (not null)
+//   content: text (not null)
+//   user_id: uuid (nullable)
+//   created_at: timestamp with time zone (not null, default: now())
 // Table: profiles
 //   id: uuid (not null)
 //   full_name: text (nullable)
@@ -343,12 +423,21 @@ export const Constants = {
 //   PRIMARY KEY kanban_columns_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY kanban_columns_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
 //   UNIQUE kanban_columns_user_title_unique: UNIQUE (user_id, title)
+// Table: lead_history
+//   CHECK lead_history_action_type_check: CHECK ((action_type = ANY (ARRAY['created'::text, 'moved'::text, 'message_received'::text, 'note_added'::text])))
+//   FOREIGN KEY lead_history_lead_id_fkey: FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
+//   PRIMARY KEY lead_history_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY lead_history_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL
 // Table: leads
 //   PRIMARY KEY leads_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY leads_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
 // Table: messages
 //   CHECK messages_direction_check: CHECK ((direction = ANY (ARRAY['incoming'::text, 'outgoing'::text])))
 //   PRIMARY KEY messages_pkey: PRIMARY KEY (id)
+// Table: notes
+//   FOREIGN KEY notes_lead_id_fkey: FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
+//   PRIMARY KEY notes_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY notes_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL
 // Table: profiles
 //   FOREIGN KEY profiles_id_fkey: FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
 //   PRIMARY KEY profiles_pkey: PRIMARY KEY (id)
@@ -363,12 +452,20 @@ export const Constants = {
 //   Policy "Users can manage own columns" (ALL, PERMISSIVE) roles={public}
 //     USING: (auth.uid() = user_id)
 //     WITH CHECK: (auth.uid() = user_id)
+// Table: lead_history
+//   Policy "Enable all access for authenticated users history" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
 // Table: leads
 //   Policy "Enable all access for authenticated users" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: true
 //     WITH CHECK: true
 // Table: messages
 //   Policy "Enable all access for authenticated users" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
+// Table: notes
+//   Policy "Enable all access for authenticated users notes" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: true
 //     WITH CHECK: true
 // Table: profiles
@@ -380,6 +477,68 @@ export const Constants = {
 //     USING: (auth.uid() = id)
 
 // --- DATABASE FUNCTIONS ---
+// FUNCTION log_lead_created()
+//   CREATE OR REPLACE FUNCTION public.log_lead_created()
+//    RETURNS trigger
+//    LANGUAGE plpgsql
+//    SECURITY DEFINER
+//   AS $function$
+//   BEGIN
+//       INSERT INTO public.lead_history (lead_id, action_type, description, user_id)
+//       VALUES (NEW.id, 'created', 'Lead criado', NEW.user_id);
+//       RETURN NEW;
+//   END;
+//   $function$
+//
+// FUNCTION log_lead_moved()
+//   CREATE OR REPLACE FUNCTION public.log_lead_moved()
+//    RETURNS trigger
+//    LANGUAGE plpgsql
+//    SECURITY DEFINER
+//   AS $function$
+//   BEGIN
+//       IF OLD.status IS DISTINCT FROM NEW.status THEN
+//           -- Using current_setting to get auth.uid if available, fallback to NEW.user_id
+//           INSERT INTO public.lead_history (lead_id, action_type, description, user_id)
+//           VALUES (
+//               NEW.id,
+//               'moved',
+//               OLD.status || ' → ' || NEW.status,
+//               COALESCE(NULLIF(current_setting('request.jwt.claim.sub', true), ''), NEW.user_id::text)::uuid
+//           );
+//       END IF;
+//       RETURN NEW;
+//   END;
+//   $function$
+//
+// FUNCTION log_message_received()
+//   CREATE OR REPLACE FUNCTION public.log_message_received()
+//    RETURNS trigger
+//    LANGUAGE plpgsql
+//    SECURITY DEFINER
+//   AS $function$
+//   BEGIN
+//       IF NEW.direction = 'incoming' AND NEW.lead_id IS NOT NULL THEN
+//           INSERT INTO public.lead_history (lead_id, action_type, description)
+//           VALUES (NEW.lead_id, 'message_received', NEW.message_text);
+//       END IF;
+//       RETURN NEW;
+//   END;
+//   $function$
+//
+// FUNCTION log_note_added()
+//   CREATE OR REPLACE FUNCTION public.log_note_added()
+//    RETURNS trigger
+//    LANGUAGE plpgsql
+//    SECURITY DEFINER
+//   AS $function$
+//   BEGIN
+//       INSERT INTO public.lead_history (lead_id, action_type, description, user_id)
+//       VALUES (NEW.lead_id, 'note_added', NEW.content, NEW.user_id);
+//       RETURN NEW;
+//   END;
+//   $function$
+//
 // FUNCTION rls_auto_enable()
 //   CREATE OR REPLACE FUNCTION public.rls_auto_enable()
 //    RETURNS event_trigger
@@ -411,6 +570,15 @@ export const Constants = {
 //   END;
 //   $function$
 //
+
+// --- TRIGGERS ---
+// Table: leads
+//   trigger_lead_created: CREATE TRIGGER trigger_lead_created AFTER INSERT ON public.leads FOR EACH ROW EXECUTE FUNCTION log_lead_created()
+//   trigger_lead_moved: CREATE TRIGGER trigger_lead_moved AFTER UPDATE OF status ON public.leads FOR EACH ROW EXECUTE FUNCTION log_lead_moved()
+// Table: messages
+//   trigger_message_received: CREATE TRIGGER trigger_message_received AFTER INSERT ON public.messages FOR EACH ROW EXECUTE FUNCTION log_message_received()
+// Table: notes
+//   trigger_note_added: CREATE TRIGGER trigger_note_added AFTER INSERT ON public.notes FOR EACH ROW EXECUTE FUNCTION log_note_added()
 
 // --- INDEXES ---
 // Table: kanban_columns

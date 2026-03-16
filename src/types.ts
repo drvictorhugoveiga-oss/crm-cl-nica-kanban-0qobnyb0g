@@ -37,3 +37,11 @@ export interface LeadHistoryItem {
   timestamp: string
   user_id?: string
 }
+
+export interface SavedFilter {
+  id: string
+  user_id: string
+  name: string
+  filters: any
+  created_at: string
+}

@@ -7,7 +7,7 @@ import React, {
   useCallback,
   useRef,
 } from 'react'
-import { Lead, LeadStage, LeadOrigin } from '@/types'
+import { Lead, LeadStage, LeadOrigin, SavedFilter } from '@/types'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { logAudit } from '@/services/audit'
@@ -27,14 +27,18 @@ interface LeadStore {
   setDateRange: (range: DateRange | undefined) => void
   selectedStages: string[]
   setSelectedStages: (stages: string[]) => void
-  saveFilters: () => void
-  loadFilters: () => void
   clearFilters: () => void
   fetchLeads: () => Promise<void>
   addLead: (lead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>) => Promise<void>
   updateLeadStage: (id: string, newStage: LeadStage) => Promise<void>
   deleteLead: (id: string) => Promise<void>
   isLoading: boolean
+  savedFilters: SavedFilter[]
+  fetchSavedFilters: () => Promise<void>
+  saveCurrentFilter: (name: string) => Promise<void>
+  deleteSavedFilter: (id: string) => Promise<void>
+  applySavedFilter: (filters: any) => void
+  getFilteredLeads: () => Lead[]
 }
 
 const LeadContext = createContext<LeadStore | undefined>(undefined)
@@ -63,11 +67,33 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   const [sourceFilter, setSourceFilter] = useState('all')
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
   const [selectedStages, setSelectedStages] = useState<string[]>([])
+  const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  const saveFilters = useCallback(() => {
+  const clearFilters = useCallback(() => {
+    setSearchQuery('')
+    setSourceFilter('all')
+    setSelectedStages([])
+    setDateRange(undefined)
+    toast({ description: 'Filtros limpos.' })
+  }, [])
+
+  const fetchSavedFilters = useCallback(async () => {
+    if (!user?.id) return
+    const { data, error } = await supabase
+      .from('saved_filters')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+    if (!error && data) {
+      setSavedFilters(data)
+    }
+  }, [user])
+
+  const saveCurrentFilter = async (name: string) => {
+    if (!user?.id) return
     const filters = {
       searchQuery,
       sourceFilter,
@@ -79,46 +105,83 @@ export function LeadProvider({ children }: { children: ReactNode }) {
           }
         : undefined,
     }
-    localStorage.setItem('crm_kanban_filters', JSON.stringify(filters))
-    toast({ title: 'Sucesso', description: 'Filtros salvos com sucesso!' })
-  }, [searchQuery, sourceFilter, selectedStages, dateRange])
+    const { data, error } = await supabase
+      .from('saved_filters')
+      .insert({
+        user_id: user.id,
+        name,
+        filters,
+      })
+      .select()
+      .single()
 
-  const loadFilters = useCallback(() => {
-    const saved = localStorage.getItem('crm_kanban_filters')
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved)
-        setSearchQuery(parsed.searchQuery || '')
-        setSourceFilter(parsed.sourceFilter || 'all')
-        setSelectedStages(parsed.selectedStages || [])
-        if (parsed.dateRange) {
-          setDateRange({
-            from: parsed.dateRange.from ? new Date(parsed.dateRange.from) : undefined,
-            to: parsed.dateRange.to ? new Date(parsed.dateRange.to) : undefined,
-          })
-        } else {
-          setDateRange(undefined)
-        }
-        toast({ title: 'Sucesso', description: 'Filtros carregados com sucesso!' })
-      } catch (e) {
-        toast({
-          title: 'Erro',
-          description: 'Erro ao carregar filtros salvos.',
-          variant: 'destructive',
-        })
-      }
-    } else {
-      toast({ description: 'Nenhum filtro salvo encontrado.' })
+    if (error) {
+      toast({ title: 'Erro', description: 'Erro ao salvar filtro.', variant: 'destructive' })
+    } else if (data) {
+      setSavedFilters((prev) => [data, ...prev])
+      toast({ title: 'Sucesso', description: 'Filtro salvo com sucesso!' })
     }
-  }, [])
+  }
 
-  const clearFilters = useCallback(() => {
-    setSearchQuery('')
-    setSourceFilter('all')
-    setSelectedStages([])
-    setDateRange(undefined)
-    toast({ description: 'Filtros limpos.' })
-  }, [])
+  const deleteSavedFilter = async (id: string) => {
+    if (!user?.id) return
+    const { error } = await supabase.from('saved_filters').delete().eq('id', id)
+    if (error) {
+      toast({ title: 'Erro', description: 'Erro ao excluir filtro.', variant: 'destructive' })
+    } else {
+      setSavedFilters((prev) => prev.filter((f) => f.id !== id))
+      toast({ description: 'Filtro excluído.' })
+    }
+  }
+
+  const applySavedFilter = (filters: any) => {
+    setSearchQuery(filters.searchQuery || '')
+    setSourceFilter(filters.sourceFilter || 'all')
+    setSelectedStages(filters.selectedStages || [])
+    if (filters.dateRange) {
+      setDateRange({
+        from: filters.dateRange.from ? new Date(filters.dateRange.from) : undefined,
+        to: filters.dateRange.to ? new Date(filters.dateRange.to) : undefined,
+      })
+    } else {
+      setDateRange(undefined)
+    }
+    toast({ description: 'Filtro aplicado.' })
+  }
+
+  const getFilteredLeads = useCallback(() => {
+    return leads.filter((lead) => {
+      if (selectedStages.length > 0 && !selectedStages.includes(lead.stage)) return false
+
+      const query = searchQuery.toLowerCase()
+      const matchesSearch =
+        !query ||
+        lead.name.toLowerCase().includes(query) ||
+        (lead.phone && lead.phone.includes(query)) ||
+        (lead.email && lead.email.toLowerCase().includes(query))
+
+      const matchesSource = sourceFilter === 'all' || lead.origin === sourceFilter
+
+      let matchesDate = true
+      if (dateRange?.from) {
+        const leadDate = new Date(lead.created_at)
+        const from = new Date(dateRange.from)
+        from.setHours(0, 0, 0, 0)
+
+        if (leadDate < from) {
+          matchesDate = false
+        } else if (dateRange.to) {
+          const to = new Date(dateRange.to)
+          to.setHours(23, 59, 59, 999)
+          if (leadDate > to) {
+            matchesDate = false
+          }
+        }
+      }
+
+      return matchesSearch && matchesSource && matchesDate
+    })
+  }, [leads, selectedStages, searchQuery, sourceFilter, dateRange])
 
   const fetchLeads = useCallback(async () => {
     if (!user?.id) return
@@ -241,9 +304,11 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (user?.id) {
       fetchLeads()
+      fetchSavedFilters()
     } else {
       setLeads([])
       setOrigins([])
+      setSavedFilters([])
     }
 
     return () => {
@@ -251,7 +316,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
         abortControllerRef.current.abort('Component unmounted')
       }
     }
-  }, [user, fetchLeads])
+  }, [user, fetchLeads, fetchSavedFilters])
 
   const addLead = async (newLead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user?.id) return
@@ -308,7 +373,6 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       l.id === id ? { ...l, stage: newStage, updated_at: new Date().toISOString() } : l,
     )
 
-    // Optimistically update UI
     setLeads(newLeads)
     try {
       localStorage.setItem(`crm_leads_${user.id}`, JSON.stringify(newLeads))
@@ -323,7 +387,6 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       .eq('user_id', user.id)
 
     if (error) {
-      // Revert optimistic update
       setLeads(prevLeads)
       try {
         localStorage.setItem(`crm_leads_${user.id}`, JSON.stringify(prevLeads))
@@ -348,7 +411,6 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     const prevLeads = [...leads]
     const newLeads = prevLeads.filter((l) => l.id !== id)
 
-    // Optimistically update UI
     setLeads(newLeads)
     try {
       localStorage.setItem(`crm_leads_${user.id}`, JSON.stringify(newLeads))
@@ -359,7 +421,6 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.from('leads').delete().eq('id', id).eq('user_id', user.id)
 
     if (error) {
-      // Revert optimistic update
       setLeads(prevLeads)
       try {
         localStorage.setItem(`crm_leads_${user.id}`, JSON.stringify(prevLeads))
@@ -386,14 +447,18 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       setDateRange,
       selectedStages,
       setSelectedStages,
-      saveFilters,
-      loadFilters,
       clearFilters,
       fetchLeads,
       addLead,
       updateLeadStage,
       deleteLead,
       isLoading,
+      savedFilters,
+      fetchSavedFilters,
+      saveCurrentFilter,
+      deleteSavedFilter,
+      applySavedFilter,
+      getFilteredLeads,
     }),
     [
       leads,
@@ -402,11 +467,12 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       sourceFilter,
       dateRange,
       selectedStages,
-      saveFilters,
-      loadFilters,
       clearFilters,
       fetchLeads,
       isLoading,
+      savedFilters,
+      fetchSavedFilters,
+      getFilteredLeads,
     ],
   )
   return <LeadContext.Provider value={value}>{children}</LeadContext.Provider>
