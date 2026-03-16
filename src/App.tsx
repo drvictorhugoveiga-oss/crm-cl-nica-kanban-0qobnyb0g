@@ -10,9 +10,11 @@ import Layout from './components/Layout'
 import AnaliseOrigem from './pages/AnaliseOrigem'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import PrivacySettings from './pages/PrivacySettings'
+import Settings from './pages/Settings'
 import { LeadProvider } from './stores/useLeadStore'
 import { AuthProvider } from './hooks/use-auth'
 import { WhatsAppProvider } from './stores/useWhatsAppStore'
+import { KanbanProvider } from './stores/useKanbanStore'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 const App = () => (
@@ -28,9 +30,11 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <LeadProvider>
-                  <WhatsAppProvider>
-                    <Layout />
-                  </WhatsAppProvider>
+                  <KanbanProvider>
+                    <WhatsAppProvider>
+                      <Layout />
+                    </WhatsAppProvider>
+                  </KanbanProvider>
                 </LeadProvider>
               </ProtectedRoute>
             }
@@ -40,6 +44,7 @@ const App = () => (
             <Route path="analise-origem" element={<AnaliseOrigem />} />
             <Route path="politica-privacidade" element={<PrivacyPolicy />} />
             <Route path="configuracoes-privacidade" element={<PrivacySettings />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

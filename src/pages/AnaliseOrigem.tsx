@@ -1,27 +1,31 @@
 import { useMemo } from 'react'
 import useLeadStore from '@/stores/useLeadStore'
+import { useKanbanStore } from '@/stores/useKanbanStore'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Users, DollarSign, Activity, TrendingUp } from 'lucide-react'
 
 export default function AnaliseOrigem() {
   const { leads, isLoading } = useLeadStore()
+  const { columns } = useKanbanStore()
 
   const stats = useMemo(() => {
     const total = leads.length
-    const converted = leads.filter((l) => l.stage === 'convertido').length
-    const active = leads.filter((l) =>
-      ['novo_contato', 'agendado', 'em_atendimento'].includes(l.stage),
+    const convertedCol = columns[columns.length - 1]?.title || 'Convertido'
+
+    const converted = leads.filter(
+      (l) => l.stage === convertedCol || l.stage === 'convertido',
     ).length
+    const active = leads.filter((l) => l.stage !== convertedCol && l.stage !== 'Perdido').length
+
     const conversionRate = total > 0 ? ((converted / total) * 100).toFixed(1) : '0.0'
 
-    // Calculate total values with safe fallbacks
     const totalValue = leads.reduce((acc, curr: any) => acc + (Number(curr.value) || 0), 0)
     const totalCost = leads.reduce((acc, curr: any) => acc + (Number(curr.cost) || 0), 0)
     const roi = totalCost > 0 ? (((totalValue - totalCost) / totalCost) * 100).toFixed(1) : '0.0'
 
     return { total, converted, active, conversionRate, totalValue, totalCost, roi }
-  }, [leads])
+  }, [leads, columns])
 
   return (
     <div className="p-4 sm:p-6 bg-[#F8FAFC] h-full overflow-y-auto w-full animate-fade-in">
@@ -75,7 +79,9 @@ export default function AnaliseOrigem() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-slate-800">{stats.converted}</div>
-                  <p className="text-xs text-slate-500 mt-1">Pacientes conquistados</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Taxa de conversão: {stats.conversionRate}%
+                  </p>
                 </CardContent>
               </Card>
 

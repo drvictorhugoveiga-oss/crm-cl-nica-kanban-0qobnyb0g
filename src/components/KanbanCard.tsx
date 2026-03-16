@@ -3,6 +3,7 @@ import { Calendar, Mail, Phone, MoreHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { useKanbanStore } from '@/stores/useKanbanStore'
 
 const ORIGIN_COLORS: Record<string, string> = {
   'Google Ads': 'bg-blue-100 text-blue-700',
@@ -13,36 +14,29 @@ const ORIGIN_COLORS: Record<string, string> = {
   Outro: 'bg-gray-100 text-gray-700',
 }
 
-const STATUS_BORDER_COLORS: Record<string, string> = {
-  novo_contato: 'border-l-blue-500',
-  agendado: 'border-l-purple-500',
-  em_atendimento: 'border-l-orange-500',
-  convertido: 'border-l-emerald-500',
-  perdido: 'border-l-red-500',
-}
-
 export function KanbanCard({ lead }: { lead: Lead }) {
   const [isDragging, setIsDragging] = useState(false)
+  const { columns } = useKanbanStore()
+
+  const colColor = columns.find((c) => c.title === lead.stage)?.color || '#cbd5e1'
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    e.dataTransfer.setData('type', 'card')
     e.dataTransfer.setData('leadId', lead.id)
     e.dataTransfer.effectAllowed = 'move'
-    // Delay setting isDragging so the dragged clone still looks normal
     requestAnimationFrame(() => setIsDragging(true))
   }
 
-  const handleDragEnd = () => {
-    setIsDragging(false)
-  }
+  const handleDragEnd = () => setIsDragging(false)
 
   return (
     <div
       draggable
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      style={{ borderLeftColor: colColor }}
       className={cn(
         'group relative flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm border border-slate-200/60 border-l-4 cursor-grab transition-all duration-300 hover:shadow-md hover:-translate-y-1 active:cursor-grabbing animate-fade-in-up',
-        STATUS_BORDER_COLORS[lead.stage],
         isDragging && 'opacity-40 rotate-3 scale-95 shadow-lg z-50',
       )}
     >

@@ -1,23 +1,23 @@
 import { useState, useRef } from 'react'
-import { LeadStage } from '@/types'
 import { KanbanCard } from './KanbanCard'
 import useLeadStore from '@/stores/useLeadStore'
+import { useKanbanStore } from '@/stores/useKanbanStore'
+import { KanbanColumnDef } from '@/types'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 
 interface KanbanColumnProps {
-  id: LeadStage
-  title: string
-  colorClass: string
+  column: KanbanColumnDef
 }
 
-export function KanbanColumn({ id, title, colorClass }: KanbanColumnProps) {
+export function KanbanColumn({ column }: KanbanColumnProps) {
   const { leads, updateLeadStage, searchQuery, sourceFilter, isLoading } = useLeadStore()
+  const { reorderColumns } = useKanbanStore()
   const [isOver, setIsOver] = useState(false)
   const dragCounter = useRef(0)
 
   const columnLeads = leads.filter((lead) => {
-    if (lead.stage !== id) return false
+    if (lead.stage !== column.title) return false
 
     const query = searchQuery.toLowerCase()
     const matchesSearch =
@@ -34,9 +34,7 @@ export function KanbanColumn({ id, title, colorClass }: KanbanColumnProps) {
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     dragCounter.current++
-    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
-      setIsOver(true)
-    }
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) setIsOver(true)
   }
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -59,9 +57,15 @@ export function KanbanColumn({ id, title, colorClass }: KanbanColumnProps) {
     dragCounter.current = 0
     setIsOver(false)
 
-    const leadId = e.dataTransfer.getData('leadId')
-    if (leadId) {
-      updateLeadStage(leadId, id)
+    const type = e.dataTransfer.getData('type')
+    if (type === 'card') {
+      const leadId = e.dataTransfer.getData('leadId')
+      if (leadId) updateLeadStage(leadId, column.title)
+    } else if (type === 'column') {
+      const sourceColId = e.dataTransfer.getData('colId')
+      if (sourceColId && sourceColId !== column.id) {
+        reorderColumns(sourceColId, column.id)
+      }
     }
   }
 
@@ -71,27 +75,29 @@ export function KanbanColumn({ id, title, colorClass }: KanbanColumnProps) {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      style={{ outlineColor: isOver ? column.color : 'transparent' }}
       className={cn(
-        'flex flex-col min-w-[300px] w-[85vw] sm:w-[320px] max-w-[350px] shrink-0 bg-slate-100/60 rounded-2xl h-full transition-colors duration-300 snap-center border border-slate-200/50',
-        isOver && 'bg-slate-200/90 outline-dashed outline-2 outline-primary/40 outline-offset-2',
+        'flex flex-col min-w-[300px] w-[85vw] sm:w-[320px] max-w-[350px] shrink-0 bg-slate-100/60 rounded-2xl h-full transition-all duration-300 snap-center border border-slate-200/50',
+        isOver && 'bg-slate-200/90 outline-dashed outline-2 outline-offset-2',
       )}
     >
-      <div className="flex items-center justify-between p-4 mb-1">
+      <div
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.setData('type', 'column')
+          e.dataTransfer.setData('colId', column.id)
+        }}
+        className="flex items-center justify-between p-4 mb-1 cursor-grab active:cursor-grabbing hover:bg-slate-200/50 rounded-t-2xl transition-colors group"
+      >
         <div className="flex items-center gap-2.5">
           <div
-            className={cn(
-              'w-3 h-3 rounded-full shadow-sm',
-              colorClass.replace('border-', 'bg-').replace('border-l-', 'bg-'),
-            )}
+            className="w-3 h-3 rounded-full shadow-sm transition-transform group-hover:scale-110"
+            style={{ backgroundColor: column.color }}
           />
-          <h3 className="font-semibold text-slate-800 text-[15px]">{title}</h3>
+          <h3 className="font-semibold text-slate-800 text-[15px] select-none">{column.title}</h3>
         </div>
         <span className="bg-white text-slate-600 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-sm border border-slate-200/60 transition-all">
-          {isLoading && leads.length === 0 ? (
-            <Skeleton className="h-3 w-3 bg-slate-200" />
-          ) : (
-            columnLeads.length
-          )}
+          {isLoading && leads.length === 0 ? <Skeleton className="h-3 w-3" /> : columnLeads.length}
         </span>
       </div>
 
@@ -102,23 +108,14 @@ export function KanbanColumn({ id, title, colorClass }: KanbanColumnProps) {
               <Skeleton className="h-5 w-3/4 mb-3" />
               <Skeleton className="h-4 w-1/2 mb-2" />
               <Skeleton className="h-4 w-2/3 mb-4" />
-              <div className="flex justify-between items-center">
-                <Skeleton className="h-5 w-16 rounded-md" />
-                <Skeleton className="h-4 w-20" />
-              </div>
             </div>
             <div className="rounded-xl border border-slate-200/60 bg-white p-4 shadow-sm animate-pulse opacity-70">
               <Skeleton className="h-5 w-2/3 mb-3" />
               <Skeleton className="h-4 w-1/2 mb-2" />
-              <Skeleton className="h-4 w-3/4 mb-4" />
-              <div className="flex justify-between items-center">
-                <Skeleton className="h-5 w-16 rounded-md" />
-                <Skeleton className="h-4 w-20" />
-              </div>
             </div>
           </>
         ) : columnLeads.length === 0 ? (
-          <div className="h-28 rounded-xl border-2 border-dashed border-slate-300/70 flex flex-col items-center justify-center text-center p-4 animate-fade-in">
+          <div className="h-28 rounded-xl border-2 border-dashed border-slate-300/70 flex flex-col items-center justify-center text-center p-4 animate-fade-in bg-white/50">
             <span className="text-sm text-slate-500 font-medium">Nenhum lead nesta etapa</span>
             {(searchQuery || sourceFilter !== 'all') && (
               <span className="text-xs text-slate-400 mt-1">Ajuste os filtros de busca</span>
