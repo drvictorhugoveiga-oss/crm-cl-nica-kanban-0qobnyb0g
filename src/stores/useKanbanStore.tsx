@@ -74,7 +74,12 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
         fetchLeads()
       }
     } else if (data) {
-      setColumns(data)
+      // Ensure local state uniqueness just in case
+      const uniqueData = data.filter(
+        (col, index, self) =>
+          index === self.findIndex((t) => t.title.toLowerCase() === col.title.toLowerCase()),
+      )
+      setColumns(uniqueData)
     }
     setIsLoading(false)
   }, [user, fetchLeads])
@@ -85,15 +90,26 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
 
   const addColumn = async (title: string, color: string) => {
     if (!user) return
+    const cleanTitle = title.trim()
+
+    if (columns.some((c) => c.title.toLowerCase() === cleanTitle.toLowerCase())) {
+      toast.error('Já existe uma coluna com este nome')
+      return
+    }
+
     const position = columns.length > 0 ? Math.max(...columns.map((c) => c.position)) + 1 : 0
     const { data, error } = await supabase
       .from('kanban_columns')
-      .insert([{ title, color, position, user_id: user.id }])
+      .insert([{ title: cleanTitle, color, position, user_id: user.id }])
       .select()
       .single()
 
     if (error) {
-      toast.error('Erro ao criar coluna')
+      if (error.code === '23505') {
+        toast.error('Já existe uma coluna com este nome')
+      } else {
+        toast.error('Erro ao criar coluna')
+      }
       return
     }
     setColumns((prev) => [...prev, data])
@@ -103,20 +119,39 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
   const updateColumn = async (id: string, title: string, color: string) => {
     const col = columns.find((c) => c.id === id)
     if (!col || !user) return
-    const oldTitle = col.title
 
-    const { error } = await supabase.from('kanban_columns').update({ title, color }).eq('id', id)
-    if (error) {
-      toast.error('Erro ao atualizar coluna')
+    const cleanTitle = title.trim()
+    const isDuplicate = columns.some(
+      (c) => c.id !== id && c.title.toLowerCase() === cleanTitle.toLowerCase(),
+    )
+
+    if (isDuplicate) {
+      toast.error('Já existe outra coluna com este nome')
       return
     }
 
-    setColumns((prev) => prev.map((c) => (c.id === id ? { ...c, title, color } : c)))
+    const oldTitle = col.title
 
-    if (oldTitle !== title) {
+    const { error } = await supabase
+      .from('kanban_columns')
+      .update({ title: cleanTitle, color })
+      .eq('id', id)
+
+    if (error) {
+      if (error.code === '23505') {
+        toast.error('Já existe uma coluna com este nome')
+      } else {
+        toast.error('Erro ao atualizar coluna')
+      }
+      return
+    }
+
+    setColumns((prev) => prev.map((c) => (c.id === id ? { ...c, title: cleanTitle, color } : c)))
+
+    if (oldTitle !== cleanTitle) {
       await supabase
         .from('leads')
-        .update({ status: title })
+        .update({ status: cleanTitle })
         .eq('status', oldTitle)
         .eq('user_id', user.id)
       fetchLeads()

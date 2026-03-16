@@ -32,7 +32,7 @@ interface ColumnDialogProps {
 }
 
 export function ColumnDialog({ open, onOpenChange, editingColumn }: ColumnDialogProps) {
-  const { addColumn, updateColumn } = useKanbanStore()
+  const { addColumn, updateColumn, columns } = useKanbanStore()
   const [title, setTitle] = useState('')
   const [color, setColor] = useState(COLORS[0])
   const [loading, setLoading] = useState(false)
@@ -47,8 +47,13 @@ export function ColumnDialog({ open, onOpenChange, editingColumn }: ColumnDialog
     }
   }, [editingColumn, open])
 
+  const titleExists = columns.some(
+    (c) =>
+      c.title.trim().toLowerCase() === title.trim().toLowerCase() && c.id !== editingColumn?.id,
+  )
+
   const handleSave = async () => {
-    if (!title.trim()) return
+    if (!title.trim() || titleExists) return
     setLoading(true)
     if (editingColumn) {
       await updateColumn(editingColumn.id, title, color)
@@ -72,8 +77,13 @@ export function ColumnDialog({ open, onOpenChange, editingColumn }: ColumnDialog
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Em Negociação"
-              className="focus-visible:ring-primary/50"
+              className={`focus-visible:ring-primary/50 ${titleExists ? 'border-red-500 focus-visible:ring-red-500/50' : ''}`}
             />
+            {titleExists && (
+              <p className="text-[13px] text-red-500 font-medium">
+                Já existe uma coluna com este nome.
+              </p>
+            )}
           </div>
           <div className="space-y-3">
             <Label>Cor de Destaque</Label>
@@ -94,7 +104,7 @@ export function ColumnDialog({ open, onOpenChange, editingColumn }: ColumnDialog
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={loading || !title.trim()}>
+          <Button onClick={handleSave} disabled={loading || !title.trim() || titleExists}>
             Salvar
           </Button>
         </DialogFooter>

@@ -33,6 +33,33 @@ export type Database = {
         }
         Relationships: []
       }
+      kanban_columns: {
+        Row: {
+          color: string
+          created_at: string | null
+          id: string
+          position: number
+          title: string
+          user_id: string
+        }
+        Insert: {
+          color: string
+          created_at?: string | null
+          id?: string
+          position: number
+          title: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string | null
+          id?: string
+          position?: number
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           cost: number | null
@@ -102,6 +129,24 @@ export type Database = {
           phone?: string
           read?: boolean
           timestamp?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          full_name: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -258,6 +303,13 @@ export const Constants = {
 //   action: text (not null)
 //   timestamp: timestamp with time zone (not null, default: now())
 //   details: jsonb (nullable)
+// Table: kanban_columns
+//   id: uuid (not null, default: gen_random_uuid())
+//   user_id: uuid (not null)
+//   title: text (not null)
+//   color: text (not null)
+//   position: integer (not null)
+//   created_at: timestamp with time zone (nullable, default: now())
 // Table: leads
 //   id: uuid (not null, default: gen_random_uuid())
 //   name: text (not null)
@@ -278,17 +330,27 @@ export const Constants = {
 //   direction: text (not null)
 //   timestamp: timestamp with time zone (not null, default: now())
 //   read: boolean (not null, default: false)
+// Table: profiles
+//   id: uuid (not null)
+//   full_name: text (nullable)
+//   updated_at: timestamp with time zone (nullable, default: now())
 
 // --- CONSTRAINTS ---
 // Table: audit_logs
 //   PRIMARY KEY audit_logs_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY audit_logs_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+// Table: kanban_columns
+//   PRIMARY KEY kanban_columns_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY kanban_columns_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
 // Table: leads
 //   PRIMARY KEY leads_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY leads_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
 // Table: messages
 //   CHECK messages_direction_check: CHECK ((direction = ANY (ARRAY['incoming'::text, 'outgoing'::text])))
 //   PRIMARY KEY messages_pkey: PRIMARY KEY (id)
+// Table: profiles
+//   FOREIGN KEY profiles_id_fkey: FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
+//   PRIMARY KEY profiles_pkey: PRIMARY KEY (id)
 
 // --- ROW LEVEL SECURITY POLICIES ---
 // Table: audit_logs
@@ -296,6 +358,10 @@ export const Constants = {
 //     WITH CHECK: (auth.uid() = user_id)
 //   Policy "Users can view their own logs" (SELECT, PERMISSIVE) roles={authenticated}
 //     USING: (auth.uid() = user_id)
+// Table: kanban_columns
+//   Policy "Users can manage own columns" (ALL, PERMISSIVE) roles={public}
+//     USING: (auth.uid() = user_id)
+//     WITH CHECK: (auth.uid() = user_id)
 // Table: leads
 //   Policy "Enable all access for authenticated users" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: true
@@ -304,6 +370,13 @@ export const Constants = {
 //   Policy "Enable all access for authenticated users" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: true
 //     WITH CHECK: true
+// Table: profiles
+//   Policy "Users can insert own profile" (INSERT, PERMISSIVE) roles={public}
+//     WITH CHECK: (auth.uid() = id)
+//   Policy "Users can update own profile" (UPDATE, PERMISSIVE) roles={public}
+//     USING: (auth.uid() = id)
+//   Policy "Users can view own profile" (SELECT, PERMISSIVE) roles={public}
+//     USING: (auth.uid() = id)
 
 // --- DATABASE FUNCTIONS ---
 // FUNCTION rls_auto_enable()

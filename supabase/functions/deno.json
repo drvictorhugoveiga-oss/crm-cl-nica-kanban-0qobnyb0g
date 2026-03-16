@@ -1,7 +1,6 @@
 {
   "_versions": {
     "whatsapp-handler": 1,
-    "lgpd-encryption-handler": 1,
-    "functions": 3
+    "lgpd-encryption-handler": 1
   }
 }
