@@ -60,8 +60,7 @@ Deno.serve(async (req: Request) => {
       if (msgLower.includes('horário') || msgLower.includes('hora')) {
         botResponse = 'Nosso horário de funcionamento é de Segunda a Sexta, das 08h às 18h.'
       } else if (msgLower.includes('preço') || msgLower.includes('valor')) {
-        botResponse =
-          'Os valores variam conforme a especialidade. Por favor, deixe seu contato se ainda não o fez, ou ligue para nossa recepção.'
+        botResponse = 'Os valores variam conforme a especialidade. Por favor, deixe seu contato se ainda não o fez, ou ligue para nossa recepção.'
       } else if (msgLower.includes('local') || msgLower.includes('endereço')) {
         botResponse = 'Estamos localizados no Centro Médico Empresarial, Sala 402, São Paulo - SP.'
       }
@@ -76,8 +75,7 @@ Deno.serve(async (req: Request) => {
         currentState = 'ASK_PHONE'
       } else if (currentState === 'ASK_PHONE') {
         collectedPhone = message
-        botResponse =
-          'Obrigado! Um de nossos especialistas entrará em contato. Como posso ajudar agora?'
+        botResponse = 'Obrigado! Um de nossos especialistas entrará em contato. Como posso ajudar agora?'
         currentState = 'READY'
 
         // Create or Update Lead
@@ -122,8 +120,7 @@ Deno.serve(async (req: Request) => {
           }
         }
       } else if (currentState === 'READY') {
-        botResponse =
-          'Mensagem recebida. Nossa equipe fará a triagem e retornará em breve. Tem mais alguma dúvida?'
+        botResponse = 'Mensagem recebida. Nossa equipe fará a triagem e retornará em breve. Tem mais alguma dúvida?'
       }
     }
 
