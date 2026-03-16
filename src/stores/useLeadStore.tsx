@@ -88,13 +88,15 @@ export function LeadProvider({ children }: { children: ReactNode }) {
         if (signal?.aborted) return
 
         if (error) {
+          const msg = error.message || ''
           const isAbortError =
             error.name === 'AbortError' ||
-            error.message?.includes('Aborted') ||
-            error.message?.includes('HTTP N/A')
+            msg.includes('Aborted') ||
+            msg.includes('aborted without reason') ||
+            msg.includes('HTTP N/A')
 
           if (!isAbortError) {
-            toast.error('Erro ao carregar leads: ' + error.message)
+            toast.error('Erro ao carregar leads: ' + msg)
           }
           return
         }
@@ -110,7 +112,10 @@ export function LeadProvider({ children }: { children: ReactNode }) {
             if (signal?.aborted) return
 
             if (decryptError) {
-              console.error('Decryption error:', decryptError)
+              const msg = decryptError.message || ''
+              if (!msg.includes('aborted without reason') && !msg.includes('AbortError')) {
+                console.error('Decryption error:', decryptError)
+              }
             }
 
             const parsedLeads = (decryptedData?.result || data).map(mapRowToLead)
@@ -121,7 +126,15 @@ export function LeadProvider({ children }: { children: ReactNode }) {
               /* ignore */
             }
           } catch (invokeErr: any) {
-            if (signal?.aborted || invokeErr.name === 'AbortError') return
+            const msg = invokeErr?.message || ''
+            if (
+              signal?.aborted ||
+              invokeErr?.name === 'AbortError' ||
+              msg.includes('Aborted') ||
+              msg.includes('aborted without reason')
+            ) {
+              return
+            }
             console.error('Decryption invoke failed:', invokeErr)
             const parsedLeads = data.map(mapRowToLead)
             setLeads(parsedLeads)
@@ -136,11 +149,13 @@ export function LeadProvider({ children }: { children: ReactNode }) {
           { id: '5', name: 'WhatsApp', description: 'WhatsApp' },
         ])
       } catch (err: any) {
+        const msg = err?.message || ''
         if (
           signal?.aborted ||
-          err.name === 'AbortError' ||
-          err.message?.includes('Aborted') ||
-          err.message?.includes('HTTP N/A')
+          err?.name === 'AbortError' ||
+          msg.includes('Aborted') ||
+          msg.includes('aborted without reason') ||
+          msg.includes('HTTP N/A')
         ) {
           return
         }

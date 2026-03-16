@@ -6,19 +6,31 @@ export async function fetchWithRetry<T>(
 ): Promise<{ data: T | null; error: any }> {
   for (let i = 0; i < retries; i++) {
     if (signal?.aborted) {
-      return { data: null, error: { name: 'AbortError', message: 'Aborted' } }
+      return {
+        data: null,
+        error: { name: 'AbortError', message: 'signal is aborted without reason' },
+      }
     }
 
     try {
       const result = await queryFn()
 
       if (result.error) {
-        if (result.error.name === 'AbortError' || signal?.aborted) {
-          return { data: null, error: { name: 'AbortError', message: 'Aborted' } }
-        }
-
         const msg = result.error.message || ''
         const code = result.error.code || ''
+
+        if (
+          result.error.name === 'AbortError' ||
+          signal?.aborted ||
+          msg.includes('Aborted') ||
+          msg.includes('aborted without reason') ||
+          code === '20'
+        ) {
+          return {
+            data: null,
+            error: { name: 'AbortError', message: 'signal is aborted without reason' },
+          }
+        }
 
         if (
           msg.includes('Failed to fetch') ||
@@ -35,16 +47,24 @@ export async function fetchWithRetry<T>(
 
       return result
     } catch (err: any) {
-      if (signal?.aborted || err.name === 'AbortError') {
-        return { data: null, error: { name: 'AbortError', message: 'Aborted' } }
+      const msg = err?.message || ''
+      if (
+        signal?.aborted ||
+        err?.name === 'AbortError' ||
+        msg.includes('Aborted') ||
+        msg.includes('aborted without reason')
+      ) {
+        return {
+          data: null,
+          error: { name: 'AbortError', message: 'signal is aborted without reason' },
+        }
       }
 
-      const msg = err.message || ''
       if (
         msg.includes('Failed to fetch') ||
         msg.includes('HTTP N/A') ||
         msg.includes('Load failed') ||
-        err.name === 'TypeError'
+        err?.name === 'TypeError'
       ) {
         if (i < retries - 1) {
           await new Promise((res) => setTimeout(res, baseDelay * (i + 1)))

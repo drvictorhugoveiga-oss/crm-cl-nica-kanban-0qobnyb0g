@@ -95,7 +95,12 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
         if (controller.signal.aborted) return
 
         if (error) {
-          if (error.name !== 'AbortError' && !error.message?.includes('Aborted')) {
+          const msg = error.message || ''
+          if (
+            error.name !== 'AbortError' &&
+            !msg.includes('Aborted') &&
+            !msg.includes('aborted without reason')
+          ) {
             console.error('Error loading messages:', error)
           }
           return
@@ -110,7 +115,15 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
           }
         }
       } catch (err: any) {
-        if (controller.signal.aborted || err.name === 'AbortError') return
+        const msg = err?.message || ''
+        if (
+          controller.signal.aborted ||
+          err?.name === 'AbortError' ||
+          msg.includes('Aborted') ||
+          msg.includes('aborted without reason')
+        ) {
+          return
+        }
         console.error('Unhandled error in fetchMessages:', err)
       } finally {
         if (!controller.signal.aborted) setIsLoading(false)
