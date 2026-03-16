@@ -18,7 +18,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     const payload = await req.json()
-
+    
     // Handle manual invocation or Webhook payload
     const type = payload.type || 'INSERT'
     const table = payload.table
@@ -27,7 +27,7 @@ Deno.serve(async (req: Request) => {
     if (type === 'INSERT' && record) {
       let action_type = ''
       let description = ''
-
+      
       if (table === 'notes') {
         action_type = 'note_added'
         description = record.content
@@ -35,24 +35,24 @@ Deno.serve(async (req: Request) => {
         action_type = 'task_created'
         description = record.title
       }
-
+      
       if (action_type) {
         await supabase.from('lead_history').insert({
           lead_id: record.lead_id,
           action_type,
           description,
-          user_id: record.user_id || record.assigned_to,
+          user_id: record.user_id || record.assigned_to
         })
       }
     }
-
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    
+    return new Response(JSON.stringify({ success: true }), { 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     })
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    return new Response(JSON.stringify({ error: error.message }), { 
+      status: 500, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     })
   }
 })
