@@ -9,6 +9,7 @@ import NotFound from './pages/NotFound'
 import Login from './pages/Login'
 import Layout from './components/Layout'
 import AnaliseOrigem from './pages/AnaliseOrigem'
+import Relatorios from './pages/Relatorios'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import PrivacySettings from './pages/PrivacySettings'
 import Settings from './pages/Settings'
@@ -44,6 +45,7 @@ const App = () => (
               <Route index element={<Index />} />
               <Route path="chat" element={<Chat />} />
               <Route path="analise-origem" element={<AnaliseOrigem />} />
+              <Route path="relatorios" element={<Relatorios />} />
               <Route path="politica-privacidade" element={<PrivacyPolicy />} />
               <Route path="configuracoes-privacidade" element={<PrivacySettings />} />
               <Route path="settings" element={<Settings />} />
