@@ -54,20 +54,20 @@ export function KanbanFilters() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <Input
           placeholder="Buscar nome, telefone, email..."
-          className="pl-9 h-10 w-full rounded-xl"
+          className="pl-9 h-10 w-full rounded-xl focus-visible:ring-primary/50 transition-all duration-300"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
 
       <Select value={sourceFilter} onValueChange={setSourceFilter}>
-        <SelectTrigger className="w-[160px] h-10 rounded-xl">
+        <SelectTrigger className="w-[160px] h-10 rounded-xl focus:ring-primary/50 transition-all duration-300 bg-white hover:bg-slate-50">
           <SelectValue placeholder="Origem" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="rounded-xl shadow-lg border-slate-200">
           <SelectItem value="all">Todas Origens</SelectItem>
           {origins.map((origin) => (
-            <SelectItem key={origin.id} value={origin.name}>
+            <SelectItem key={origin.id} value={origin.name} className="cursor-pointer">
               {origin.name}
             </SelectItem>
           ))}
@@ -79,7 +79,7 @@ export function KanbanFilters() {
           <Button
             variant="outline"
             className={cn(
-              'h-10 justify-start text-left font-normal w-[240px] rounded-xl',
+              'h-10 justify-start text-left font-normal w-[240px] rounded-xl transition-all duration-300 bg-white hover:bg-slate-50',
               !dateRange && 'text-muted-foreground',
             )}
           >
@@ -98,7 +98,7 @@ export function KanbanFilters() {
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 rounded-xl shadow-lg" align="start">
+        <PopoverContent className="w-auto p-0 rounded-xl shadow-lg border-slate-200" align="start">
           <Calendar
             initialFocus
             mode="range"
@@ -113,12 +113,15 @@ export function KanbanFilters() {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="h-10 w-[160px] justify-between rounded-xl">
+          <Button
+            variant="outline"
+            className="h-10 w-[160px] justify-between rounded-xl transition-all duration-300 bg-white hover:bg-slate-50"
+          >
             Etapas ({selectedStages.length > 0 ? selectedStages.length : 'Todas'})
             <Filter className="h-4 w-4 ml-2 opacity-50 shrink-0" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56 rounded-xl">
+        <DropdownMenuContent className="w-56 rounded-xl shadow-lg border-slate-200">
           <DropdownMenuLabel>Filtrar Colunas</DropdownMenuLabel>
           <DropdownMenuSeparator />
           {columns.map((col) => (
@@ -132,7 +135,7 @@ export function KanbanFilters() {
                   setSelectedStages(selectedStages.filter((s) => s !== col.title))
                 }
               }}
-              className="py-2.5 cursor-pointer"
+              className="py-2.5 cursor-pointer rounded-lg"
             >
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: col.color }} />
@@ -150,15 +153,25 @@ export function KanbanFilters() {
             size="icon"
             onClick={clearFilters}
             title="Limpar Filtros"
-            className="h-10 w-10 text-slate-500 hover:text-slate-800 rounded-xl"
+            className="h-10 w-10 text-slate-500 hover:text-slate-800 rounded-xl hover:bg-slate-100 transition-all duration-300"
           >
             <X className="h-4 w-4" />
           </Button>
         )}
-        <Button variant="secondary" size="sm" className="h-10 rounded-xl" onClick={saveFilters}>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="h-10 rounded-xl hover:shadow-md transition-all duration-300"
+          onClick={saveFilters}
+        >
           <Save className="h-4 w-4 mr-2" /> Salvar
         </Button>
-        <Button variant="outline" size="sm" className="h-10 rounded-xl" onClick={loadFilters}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-10 rounded-xl bg-white hover:bg-slate-50 transition-all duration-300"
+          onClick={loadFilters}
+        >
           <Download className="h-4 w-4 mr-2" /> Carregar
         </Button>
       </div>

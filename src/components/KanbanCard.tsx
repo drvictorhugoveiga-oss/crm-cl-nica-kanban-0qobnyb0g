@@ -46,7 +46,11 @@ export function KanbanCard({ lead }: { lead: Lead }) {
     e.dataTransfer.setData('type', 'card')
     e.dataTransfer.setData('leadId', lead.id)
     e.dataTransfer.effectAllowed = 'move'
-    requestAnimationFrame(() => setIsDragging(true))
+
+    // Ensure the browser renders the default drag image before applying drag styles
+    setTimeout(() => {
+      setIsDragging(true)
+    }, 0)
   }
 
   const handleDragEnd = () => setIsDragging(false)
@@ -80,8 +84,9 @@ export function KanbanCard({ lead }: { lead: Lead }) {
       onDragEnd={handleDragEnd}
       style={{ borderLeftColor: colColor }}
       className={cn(
-        'group relative flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm border border-slate-200/60 border-l-4 cursor-grab transition-all duration-300 ease-in-out hover:shadow-md hover:-translate-y-1 active:cursor-grabbing animate-fade-in-up',
-        isDragging && 'opacity-40 rotate-3 scale-95 shadow-lg z-50',
+        'group relative flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm border border-slate-200/60 border-l-4 cursor-grab transition-all duration-300 ease-in-out hover:shadow-md hover:-translate-y-1 active:cursor-grabbing animate-fade-in-up touch-manipulation',
+        isDragging &&
+          'opacity-50 scale-95 shadow-inner rotate-2 z-50 ring-2 ring-primary/20 cursor-grabbing',
       )}
     >
       <div className="flex justify-between items-start gap-2">

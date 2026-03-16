@@ -11,7 +11,7 @@ import { Lead, LeadStage, LeadOrigin } from '@/types'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { logAudit } from '@/services/audit'
-import { toast } from 'sonner'
+import { toast } from '@/hooks/use-toast'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 
 export type DateRange = { from?: Date; to?: Date }
@@ -80,7 +80,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
         : undefined,
     }
     localStorage.setItem('crm_kanban_filters', JSON.stringify(filters))
-    toast.success('Filtros salvos com sucesso!', { duration: 3000 })
+    toast({ title: 'Sucesso', description: 'Filtros salvos com sucesso!' })
   }, [searchQuery, sourceFilter, selectedStages, dateRange])
 
   const loadFilters = useCallback(() => {
@@ -99,12 +99,16 @@ export function LeadProvider({ children }: { children: ReactNode }) {
         } else {
           setDateRange(undefined)
         }
-        toast.success('Filtros carregados com sucesso!', { duration: 3000 })
+        toast({ title: 'Sucesso', description: 'Filtros carregados com sucesso!' })
       } catch (e) {
-        toast.error('Erro ao carregar filtros salvos.', { duration: 3000 })
+        toast({
+          title: 'Erro',
+          description: 'Erro ao carregar filtros salvos.',
+          variant: 'destructive',
+        })
       }
     } else {
-      toast.info('Nenhum filtro salvo encontrado.', { duration: 3000 })
+      toast({ description: 'Nenhum filtro salvo encontrado.' })
     }
   }, [])
 
@@ -113,7 +117,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     setSourceFilter('all')
     setSelectedStages([])
     setDateRange(undefined)
-    toast.info('Filtros limpos.', { duration: 2000 })
+    toast({ description: 'Filtros limpos.' })
   }, [])
 
   const fetchLeads = useCallback(async () => {
@@ -168,7 +172,11 @@ export function LeadProvider({ children }: { children: ReactNode }) {
           msg.includes('http n/a')
 
         if (!isAbortError) {
-          toast.error('Erro ao carregar leads: ' + (error.message || 'Erro desconhecido'))
+          toast({
+            title: 'Erro',
+            description: 'Erro ao carregar leads: ' + (error.message || 'Erro desconhecido'),
+            variant: 'destructive',
+          })
         }
         return
       }
@@ -266,7 +274,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       .single()
 
     if (error) {
-      toast.error('Erro ao adicionar lead')
+      toast({ title: 'Erro', description: 'Erro ao adicionar lead', variant: 'destructive' })
       throw error
     }
 
@@ -284,7 +292,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         /* ignore */
       }
-      toast.success('Novo lead criado com sucesso!')
+      toast({ title: 'Sucesso', description: 'Novo lead criado com sucesso!' })
       await logAudit(user.id, 'Created Lead', { lead_id: data.id, source: newLead.origin })
     }
   }
@@ -322,11 +330,15 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         /* ignore */
       }
-      toast.error('Erro ao atualizar status do lead')
+      toast({
+        title: 'Erro',
+        description: 'Erro ao atualizar status do lead. Alterações revertidas.',
+        variant: 'destructive',
+      })
       return
     }
 
-    toast.info(`Lead movido para ${newStage}`)
+    toast({ description: `Lead movido para ${newStage}` })
     await logAudit(user.id, 'Updated Lead Stage', { lead_id: id, new_stage: newStage })
   }
 
@@ -354,11 +366,11 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         /* ignore */
       }
-      toast.error('Erro ao excluir lead')
+      toast({ title: 'Erro', description: 'Erro ao excluir lead', variant: 'destructive' })
       return
     }
 
-    toast.success('Lead excluído com sucesso!')
+    toast({ title: 'Sucesso', description: 'Lead excluído com sucesso!' })
     await logAudit(user.id, 'Deleted Lead', { lead_id: id })
   }
 

@@ -4,7 +4,7 @@ import { KanbanColumn } from './KanbanColumn'
 import { KanbanFilters } from './KanbanFilters'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { ColumnDialog } from './ColumnDialog'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -12,14 +12,71 @@ export function KanbanBoard() {
   const { columns, isLoading } = useKanbanStore()
   const { selectedStages } = useLeadStore()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const scrollInterval = useRef<number | null>(null)
 
   const visibleColumns =
     selectedStages.length > 0 ? columns.filter((c) => selectedStages.includes(c.title)) : columns
 
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    if (!scrollRef.current) return
+
+    const container = scrollRef.current
+    const threshold = 120 // Pixels near edges to trigger auto-scroll
+    const mouseX = e.clientX
+    const { left, right, width } = container.getBoundingClientRect()
+
+    if (scrollInterval.current) {
+      window.clearInterval(scrollInterval.current)
+      scrollInterval.current = null
+    }
+
+    if (mouseX < left + threshold) {
+      scrollInterval.current = window.setInterval(() => {
+        if (container.scrollLeft > 0) {
+          container.scrollLeft -= 15
+        }
+      }, 16)
+    } else if (mouseX > right - threshold) {
+      scrollInterval.current = window.setInterval(() => {
+        if (container.scrollLeft < container.scrollWidth - width) {
+          container.scrollLeft += 15
+        }
+      }, 16)
+    }
+  }
+
+  const handleDragLeave = () => {
+    if (scrollInterval.current) {
+      window.clearInterval(scrollInterval.current)
+      scrollInterval.current = null
+    }
+  }
+
+  const handleDrop = () => {
+    if (scrollInterval.current) {
+      window.clearInterval(scrollInterval.current)
+      scrollInterval.current = null
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      if (scrollInterval.current) window.clearInterval(scrollInterval.current)
+    }
+  }, [])
+
   return (
     <div className="flex flex-col h-full w-full bg-slate-50/50">
       <KanbanFilters />
-      <div className="flex-1 h-full overflow-x-auto overflow-y-hidden kanban-scroll p-4 sm:p-6 pb-8 flex gap-4 sm:gap-6 items-start snap-x snap-mandatory scroll-smooth touch-pan-x">
+      <div
+        ref={scrollRef}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className="flex-1 h-full overflow-x-auto overflow-y-hidden kanban-scroll p-4 sm:p-6 pb-8 flex gap-4 sm:gap-6 items-start snap-x snap-mandatory touch-pan-x"
+      >
         {isLoading && columns.length === 0 ? (
           Array.from({ length: 4 }).map((_, i) => (
             <div

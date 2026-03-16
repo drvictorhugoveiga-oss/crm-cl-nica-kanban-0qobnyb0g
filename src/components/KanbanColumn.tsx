@@ -50,18 +50,21 @@ export function KanbanColumn({ column }: KanbanColumnProps) {
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
+    e.stopPropagation()
     dragCounter.current++
     if (e.dataTransfer.items && e.dataTransfer.items.length > 0) setIsOver(true)
   }
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
+    // Do not stop propagation here to allow KanbanBoard to scroll horizontally
     e.dataTransfer.dropEffect = 'move'
     if (!isOver) setIsOver(true)
   }
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
+    e.stopPropagation()
     dragCounter.current--
     if (dragCounter.current <= 0) {
       dragCounter.current = 0
@@ -71,6 +74,7 @@ export function KanbanColumn({ column }: KanbanColumnProps) {
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
+    e.stopPropagation()
     dragCounter.current = 0
     setIsOver(false)
 
@@ -97,7 +101,7 @@ export function KanbanColumn({ column }: KanbanColumnProps) {
       onDrop={handleDrop}
       style={{ outlineColor: isOver ? column.color : 'transparent' }}
       className={cn(
-        'flex flex-col min-w-[280px] w-[85vw] sm:w-[320px] max-w-[350px] shrink-0 bg-slate-100/60 rounded-2xl h-full transition-all duration-300 snap-center border border-slate-200/50 ease-in-out',
+        'flex flex-col min-w-[280px] w-[85vw] sm:w-[320px] max-w-[350px] shrink-0 bg-slate-100/60 rounded-2xl h-full transition-all duration-300 snap-center border border-slate-200/50 ease-in-out relative',
         isOver && 'bg-slate-200/90 outline-dashed outline-2 outline-offset-2',
       )}
     >
@@ -135,7 +139,7 @@ export function KanbanColumn({ column }: KanbanColumnProps) {
             </div>
           </>
         ) : columnLeads.length === 0 ? (
-          <div className="h-28 rounded-xl border-2 border-dashed border-slate-300/70 flex flex-col items-center justify-center text-center p-4 animate-fade-in bg-white/50 transition-all duration-300 ease-in-out">
+          <div className="h-28 rounded-xl border-2 border-dashed border-slate-300/70 flex flex-col items-center justify-center text-center p-4 animate-fade-in bg-white/50 transition-all duration-300 ease-in-out pointer-events-none">
             {searchQuery || sourceFilter !== 'all' || dateRange ? (
               <>
                 <span className="text-sm text-slate-500 font-medium">Nenhum lead encontrado</span>

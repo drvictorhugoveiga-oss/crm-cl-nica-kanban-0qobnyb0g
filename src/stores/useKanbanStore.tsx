@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { KanbanColumnDef } from '@/types'
-import { toast } from 'sonner'
+import { toast } from '@/hooks/use-toast'
 import useLeadStore from './useLeadStore'
 
 interface KanbanStore {
@@ -92,7 +92,11 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
     const cleanTitle = title.trim()
 
     if (columns.some((c) => c.title.toLowerCase() === cleanTitle.toLowerCase())) {
-      toast.error('Já existe uma coluna com este nome', { duration: 3000 })
+      toast({
+        title: 'Erro',
+        description: 'Já existe uma coluna com este nome',
+        variant: 'destructive',
+      })
       return
     }
 
@@ -105,14 +109,18 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
 
     if (error) {
       if (error.code === '23505') {
-        toast.error('Já existe uma coluna com este nome', { duration: 3000 })
+        toast({
+          title: 'Erro',
+          description: 'Já existe uma coluna com este nome',
+          variant: 'destructive',
+        })
       } else {
-        toast.error('Erro ao criar coluna', { duration: 4000 })
+        toast({ title: 'Erro', description: 'Erro ao criar coluna', variant: 'destructive' })
       }
       return
     }
     setColumns((prev) => [...prev, data])
-    toast.success('Coluna adicionada com sucesso!', { duration: 3000 })
+    toast({ title: 'Sucesso', description: 'Coluna adicionada com sucesso!' })
   }
 
   const updateColumn = async (id: string, title: string, color: string) => {
@@ -125,7 +133,11 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
     )
 
     if (isDuplicate) {
-      toast.error('Já existe outra coluna com este nome', { duration: 3000 })
+      toast({
+        title: 'Erro',
+        description: 'Já existe outra coluna com este nome',
+        variant: 'destructive',
+      })
       return
     }
 
@@ -138,9 +150,13 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
 
     if (error) {
       if (error.code === '23505') {
-        toast.error('Já existe uma coluna com este nome', { duration: 3000 })
+        toast({
+          title: 'Erro',
+          description: 'Já existe uma coluna com este nome',
+          variant: 'destructive',
+        })
       } else {
-        toast.error('Erro ao atualizar coluna', { duration: 4000 })
+        toast({ title: 'Erro', description: 'Erro ao atualizar coluna', variant: 'destructive' })
       }
       return
     }
@@ -155,7 +171,7 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
         .eq('user_id', user.id)
       fetchLeads()
     }
-    toast.success('Coluna atualizada com sucesso!', { duration: 3000 })
+    toast({ title: 'Sucesso', description: 'Coluna atualizada com sucesso!' })
   }
 
   const deleteColumn = async (id: string) => {
@@ -165,7 +181,7 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
 
     const { error } = await supabase.from('kanban_columns').delete().eq('id', id)
     if (error) {
-      toast.error('Erro ao deletar coluna', { duration: 4000 })
+      toast({ title: 'Erro', description: 'Erro ao deletar coluna', variant: 'destructive' })
       return
     }
 
@@ -176,7 +192,7 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
       .eq('user_id', user.id)
     setColumns((prev) => prev.filter((c) => c.id !== id))
     fetchLeads()
-    toast.success('Coluna excluída e leads movidos', { duration: 3000 })
+    toast({ title: 'Sucesso', description: 'Coluna excluída e leads movidos' })
   }
 
   const reorderColumns = async (sourceId: string, targetIndex: number) => {
@@ -198,13 +214,21 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
       .then((results) => {
         const hasError = results.some((r) => r.error)
         if (hasError) {
-          toast.error('Error saving funnel stages order', { duration: 4000 })
+          toast({
+            title: 'Erro',
+            description: 'Erro ao salvar a ordem das etapas',
+            variant: 'destructive',
+          })
         } else {
-          toast.success('Funnel stages reorganized successfully', { duration: 3000 })
+          toast({ title: 'Sucesso', description: 'Etapas do funil reorganizadas com sucesso' })
         }
       })
       .catch(() => {
-        toast.error('Error saving funnel stages order', { duration: 4000 })
+        toast({
+          title: 'Erro',
+          description: 'Erro ao salvar a ordem das etapas',
+          variant: 'destructive',
+        })
       })
   }
 
