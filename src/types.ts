@@ -32,7 +32,13 @@ export interface KanbanColumnDef {
 
 export interface LeadHistoryItem {
   id: string
-  action_type: 'created' | 'moved' | 'message_received' | 'note_added' | 'task_created'
+  action_type:
+    | 'created'
+    | 'moved'
+    | 'message_received'
+    | 'note_added'
+    | 'task_created'
+    | 'follow_up_sent'
   description: string
   timestamp: string
   user_id?: string
