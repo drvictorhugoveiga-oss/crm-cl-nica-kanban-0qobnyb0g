@@ -29,3 +29,11 @@ export interface KanbanColumnDef {
   color: string
   position: number
 }
+
+export interface LeadHistoryItem {
+  id: string
+  action_type: 'created' | 'moved' | 'message_received' | 'note_added'
+  description: string
+  timestamp: string
+  user_id?: string
+}
