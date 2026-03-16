@@ -211,7 +211,13 @@ export function LeadProvider({ children }: { children: ReactNode }) {
         created_at: data.created_at,
         updated_at: data.created_at,
       }
-      setLeads((prev) => [inserted, ...prev])
+      const newLeads = [inserted, ...leads]
+      setLeads(newLeads)
+      try {
+        localStorage.setItem(`crm_leads_${user.id}`, JSON.stringify(newLeads))
+      } catch (e) {
+        /* ignore */
+      }
       toast.success('Lead adicionado com sucesso!')
       await logAudit(user.id, 'Created Lead', { lead_id: data.id, source: newLead.origin })
     }
@@ -224,13 +230,17 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     if (!leadToUpdate || leadToUpdate.stage === newStage) return
 
     const prevLeads = [...leads]
+    const newLeads = prevLeads.map((l) =>
+      l.id === id ? { ...l, stage: newStage, updated_at: new Date().toISOString() } : l,
+    )
 
     // Optimistically update UI
-    setLeads((prev) =>
-      prev.map((l) =>
-        l.id === id ? { ...l, stage: newStage, updated_at: new Date().toISOString() } : l,
-      ),
-    )
+    setLeads(newLeads)
+    try {
+      localStorage.setItem(`crm_leads_${user.id}`, JSON.stringify(newLeads))
+    } catch (e) {
+      /* ignore */
+    }
 
     const { error } = await supabase
       .from('leads')
@@ -241,7 +251,12 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     if (error) {
       // Revert optimistic update
       setLeads(prevLeads)
-      toast.error('Erro ao atualizar o status do lead. Por favor, tente novamente.')
+      try {
+        localStorage.setItem(`crm_leads_${user.id}`, JSON.stringify(prevLeads))
+      } catch (e) {
+        /* ignore */
+      }
+      toast.error('Erro ao atualizar status')
       return
     }
 
