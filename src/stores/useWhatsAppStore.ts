@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect, useMe
 import { supabase } from '@/lib/supabase/client'
 import useLeadStore from './useLeadStore'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
+import { toast } from 'sonner'
 
 export interface Message {
   id: string
@@ -135,19 +136,36 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
     const phones = phoneNumbersStr ? phoneNumbersStr.split(',') : []
     const subscription = supabase
       .channel('messages_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => {
-        const newMsg = payload.new as Message
-        if (newMsg && phones.includes(newMsg.phone)) {
-          if (!controller.signal.aborted) fetchMessages()
-        }
-      })
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        (payload) => {
+          const newMsg = payload.new as Message
+          if (newMsg && phones.includes(newMsg.phone)) {
+            if (!controller.signal.aborted) {
+              fetchMessages()
+              if (newMsg.direction === 'incoming') {
+                const leadMatch = leads.find(
+                  (l) => (l.phone?.replace(/\D/g, '') || l.phone) === newMsg.phone,
+                )
+                const senderName = leadMatch ? leadMatch.name : newMsg.phone
+                const snippet =
+                  newMsg.message_text.length > 40
+                    ? newMsg.message_text.substring(0, 40) + '...'
+                    : newMsg.message_text
+                toast.info(`Nova mensagem de ${senderName}: ${snippet}`)
+              }
+            }
+          }
+        },
+      )
       .subscribe()
 
     return () => {
       controller.abort()
       subscription.unsubscribe()
     }
-  }, [phoneNumbersStr])
+  }, [phoneNumbersStr, leads])
 
   const toggleSidebar = () => setIsOpen((prev) => !prev)
 
@@ -179,7 +197,10 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.functions.invoke('whatsapp-handler', {
       body: { action: 'send', phone, message: text },
     })
-    if (error) console.error('Failed to send message:', error)
+    if (error) {
+      console.error('Failed to send message:', error)
+      toast.error('Erro ao enviar mensagem.')
+    }
   }
 
   const chatsMap = new Map<string, Chat>()

@@ -14,7 +14,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { useToast } from '@/hooks/use-toast'
+import { toast } from 'sonner'
 import { Activity } from 'lucide-react'
 
 const loginSchema = z.object({
@@ -34,7 +34,6 @@ export default function Login() {
   const { signIn, signUp, user, loading: isAuthLoading } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const { toast } = useToast()
 
   const from = location.state?.from?.pathname || '/'
 
@@ -61,14 +60,10 @@ export default function Login() {
     try {
       const { error } = await signIn(values.email, values.password)
       if (error) throw error
-      toast({ title: 'Login realizado com sucesso!' })
+      toast.success('Login realizado com sucesso!')
       navigate(from, { replace: true })
     } catch (e: any) {
-      toast({
-        title: 'Erro ao entrar',
-        description: 'Credenciais inválidas ou erro de rede.',
-        variant: 'destructive',
-      })
+      toast.error('Credenciais inválidas ou erro de rede.')
     } finally {
       setIsLoading(false)
     }
@@ -79,10 +74,10 @@ export default function Login() {
     try {
       const { error } = await signUp(values.email, values.password, values.name)
       if (error) throw error
-      toast({ title: 'Conta criada com sucesso!' })
+      toast.success('Conta criada com sucesso!')
       navigate(from, { replace: true })
     } catch (e: any) {
-      toast({ title: 'Erro ao criar conta', description: e.message, variant: 'destructive' })
+      toast.error(e.message || 'Erro ao criar conta')
     } finally {
       setIsLoading(false)
     }

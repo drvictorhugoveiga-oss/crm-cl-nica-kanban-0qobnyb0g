@@ -108,9 +108,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
           msg.includes('http n/a')
 
         if (!isAbortError) {
-          toast.error('Erro ao carregar leads: ' + (error.message || 'Erro desconhecido'), {
-            duration: 4000,
-          })
+          toast.error('Erro ao carregar leads: ' + (error.message || 'Erro desconhecido'))
         }
         return
       }
@@ -208,7 +206,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       .single()
 
     if (error) {
-      toast.error('Erro ao adicionar lead', { duration: 4000 })
+      toast.error('Erro ao adicionar lead')
       throw error
     }
 
@@ -226,7 +224,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         /* ignore */
       }
-      toast.success('Lead adicionado com sucesso!', { duration: 3000 })
+      toast.success('Novo lead criado com sucesso!')
       await logAudit(user.id, 'Created Lead', { lead_id: data.id, source: newLead.origin })
     }
   }
@@ -264,11 +262,11 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         /* ignore */
       }
-      toast.error('Erro ao atualizar status do lead', { duration: 4000 })
+      toast.error('Erro ao atualizar status do lead')
       return
     }
 
-    toast.success('Status atualizado com sucesso!', { duration: 2500, position: 'bottom-right' })
+    toast.info(`Lead movido para ${newStage}`)
     await logAudit(user.id, 'Updated Lead Stage', { lead_id: id, new_stage: newStage })
   }
 
@@ -296,11 +294,11 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         /* ignore */
       }
-      toast.error('Erro ao excluir lead', { duration: 4000 })
+      toast.error('Erro ao excluir lead')
       return
     }
 
-    toast.success('Lead excluído com sucesso!', { duration: 3000 })
+    toast.success('Lead excluído com sucesso!')
     await logAudit(user.id, 'Deleted Lead', { lead_id: id })
   }
 
