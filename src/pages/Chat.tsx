@@ -15,10 +15,14 @@ const Chat = () => {
       const { data, error } = await supabase.functions.invoke('whatsapp-handler', {
         body: { action: 'start' },
       })
+
       if (error) throw error
-      toast.success('WhatsApp handler started! Check Edge Function logs for QR Code.')
-    } catch (err) {
-      toast.error('Failed to start WhatsApp handler')
+      if (data?.error) throw new Error(data.error)
+
+      toast.success('Serviço WhatsApp conectado com sucesso!')
+    } catch (err: any) {
+      console.error('Failed to start WhatsApp handler:', err)
+      toast.error('Erro de comunicação com o serviço WhatsApp. Tente novamente mais tarde.')
     }
   }
 

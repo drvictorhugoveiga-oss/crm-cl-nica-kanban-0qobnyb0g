@@ -185,21 +185,31 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
   }
 
   const sendMessage = async (phone: string, text: string) => {
+    const tempId = Date.now().toString()
     const tempMsg: Message = {
-      id: Date.now().toString(),
+      id: tempId,
       phone,
       message_text: text,
       direction: 'outgoing',
       timestamp: new Date().toISOString(),
       read: true,
     }
+
+    // Optimistic UI update
     setMessages((prev) => [...prev, tempMsg])
-    const { error } = await supabase.functions.invoke('whatsapp-handler', {
-      body: { action: 'send', phone, message: text },
-    })
-    if (error) {
-      console.error('Failed to send message:', error)
-      toast.error('Erro ao enviar mensagem.')
+
+    try {
+      const { data, error } = await supabase.functions.invoke('whatsapp-handler', {
+        body: { action: 'send', phone, message: text },
+      })
+
+      if (error) throw error
+      if (data?.error) throw new Error(data.error)
+    } catch (err: any) {
+      console.error('Failed to send message:', err)
+      toast.error('Erro de comunicação ao enviar mensagem. Verifique a conexão.')
+      // Rollback optimistic update on failure
+      setMessages((prev) => prev.filter((m) => m.id !== tempId))
     }
   }
 
