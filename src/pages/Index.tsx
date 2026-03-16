@@ -1,5 +1,6 @@
 import { KanbanBoard } from '@/components/KanbanBoard'
 import { WhatsAppSidebar } from '@/components/WhatsAppSidebar'
+import { AIInsightsPanel } from '@/components/AIInsightsPanel'
 import useWhatsAppStore from '@/stores/useWhatsAppStore'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -41,6 +42,8 @@ const Index = () => {
             </Button>
           </div>
         </div>
+
+        <AIInsightsPanel />
 
         <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
           <KanbanBoard />

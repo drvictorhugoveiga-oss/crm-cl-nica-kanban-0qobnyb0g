@@ -75,3 +75,13 @@ export interface Task {
   created_at: string
   updated_at: string
 }
+
+export interface AISuggestion {
+  id: string
+  lead_id: string | null
+  suggestion_text: string
+  pattern_detected: string | null
+  priority: 'low' | 'medium' | 'high'
+  status: string
+  created_at: string
+}

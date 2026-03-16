@@ -4,6 +4,7 @@
     "lgpd-encryption-handler": 3,
     "history-automation-handler": 1,
     "follow-up-automation-handler": 2,
-    "chatbot-handler": 1
+    "chatbot-handler": 1,
+    "gemini-analysis-handler": 1
   }
 }
