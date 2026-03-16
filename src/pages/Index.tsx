@@ -1,5 +1,4 @@
 import { KanbanBoard } from '@/components/KanbanBoard'
-import { AIInsightsPanel } from '@/components/AIInsightsPanel'
 import { Button } from '@/components/ui/button'
 import { Download } from 'lucide-react'
 import { logAudit } from '@/services/audit'
@@ -39,8 +38,6 @@ const Index = () => {
           </div>
         </div>
       </div>
-
-      <AIInsightsPanel />
 
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
         <KanbanBoard />
