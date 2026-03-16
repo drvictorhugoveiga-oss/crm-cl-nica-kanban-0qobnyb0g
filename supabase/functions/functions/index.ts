@@ -1,7 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 
-Deno.serve(async () => {
-  return new Response(JSON.stringify({ status: 'ok', message: 'Function executed successfully' }), {
+Deno.serve(async (req: Request) => {
+  return new Response(JSON.stringify({ message: 'Functions edge function works' }), {
     headers: { 'Content-Type': 'application/json' },
   })
 })
