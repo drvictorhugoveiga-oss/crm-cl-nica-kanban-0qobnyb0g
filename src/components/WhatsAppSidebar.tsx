@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Search, X, MessageCircle } from 'lucide-react'
+import { Search, X, MessageCircle, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -10,7 +10,8 @@ import useWhatsAppStore from '@/stores/useWhatsAppStore'
 import { cn } from '@/lib/utils'
 
 export function WhatsAppSidebar() {
-  const { chats, setActiveChatId, closeSidebar, isLoading } = useWhatsAppStore()
+  const { chats, setActiveChatId, closeSidebar, isLoading, connectionStatus, logout } =
+    useWhatsAppStore()
   const [search, setSearch] = useState('')
   const location = useLocation()
   const navigate = useNavigate()
@@ -22,21 +23,39 @@ export function WhatsAppSidebar() {
     <div className="flex flex-col h-full bg-card relative">
       <div className="h-[72px] sm:h-16 bg-muted dark:bg-secondary px-4 flex items-center justify-between shrink-0 border-b border-border">
         <h2 className="font-semibold text-foreground flex items-center gap-2 text-lg sm:text-base">
-          <div className="h-9 w-9 sm:h-8 sm:w-8 bg-[#25D366] rounded-full flex items-center justify-center shadow-sm shrink-0">
-            <MessageCircle className="h-4 w-4 text-white" />
+          <div className="relative">
+            <div className="h-9 w-9 sm:h-8 sm:w-8 bg-[#25D366] rounded-full flex items-center justify-center shadow-sm shrink-0">
+              <MessageCircle className="h-4 w-4 text-white" />
+            </div>
+            {connectionStatus === 'connected' && (
+              <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-card" />
+            )}
           </div>
           Conversas
         </h2>
-        {!isChatPage && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-11 w-11 sm:h-10 sm:w-10 text-muted-foreground hover:bg-accent rounded-full shrink-0"
-            onClick={closeSidebar}
-          >
-            <X className="h-6 w-6 sm:h-5 sm:w-5" />
-          </Button>
-        )}
+        <div className="flex items-center gap-1">
+          {connectionStatus === 'connected' && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-full shrink-0"
+              onClick={logout}
+              title="Desconectar WhatsApp"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
+          )}
+          {!isChatPage && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-11 w-11 sm:h-10 sm:w-10 text-muted-foreground hover:bg-accent rounded-full shrink-0"
+              onClick={closeSidebar}
+            >
+              <X className="h-6 w-6 sm:h-5 sm:w-5" />
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="p-3 border-b border-border/50 bg-card shrink-0">
@@ -65,13 +84,13 @@ export function WhatsAppSidebar() {
             ))
           ) : filteredChats.length === 0 ? (
             <div className="p-8 text-center text-[15px] sm:text-sm text-muted-foreground mt-10">
-              Nenhum contato encontrado com "{search}".
+              Nenhum contato encontrado.
             </div>
           ) : (
             filteredChats.map((chat) => (
               <div
                 key={chat.id}
-                className="flex items-center gap-3 p-3 sm:p-3 hover:bg-muted/50 dark:hover:bg-slate-800 cursor-pointer border-b border-border/30 transition-colors animate-fade-in"
+                className="flex items-center gap-3 p-3 hover:bg-muted/50 dark:hover:bg-slate-800 cursor-pointer border-b border-border/30 transition-colors animate-fade-in"
                 onClick={() => {
                   setActiveChatId(chat.id)
                   if (!isChatPage) {

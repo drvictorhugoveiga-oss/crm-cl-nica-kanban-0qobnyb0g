@@ -1,30 +1,12 @@
-import { MessageCircle, Power } from 'lucide-react'
 import { WhatsAppSidebar } from '@/components/WhatsAppSidebar'
 import { WhatsAppActiveChat } from '@/components/WhatsAppActiveChat'
-import { Button } from '@/components/ui/button'
-import { supabase } from '@/lib/supabase/client'
-import { toast } from 'sonner'
+import { WhatsAppConnectionScreen } from '@/components/WhatsAppConnectionScreen'
+import { MessageCircle } from 'lucide-react'
 import useWhatsAppStore from '@/stores/useWhatsAppStore'
 import { cn } from '@/lib/utils'
 
 const Chat = () => {
-  const { activeChatId } = useWhatsAppStore()
-
-  const handleStartWhatsApp = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('whatsapp-handler', {
-        body: { action: 'start' },
-      })
-
-      if (error) throw error
-      if (data?.error) throw new Error(data.error)
-
-      toast.success('Serviço WhatsApp conectado com sucesso!')
-    } catch (err: any) {
-      console.error('Failed to start WhatsApp handler:', err)
-      toast.error('Erro de comunicação com o serviço WhatsApp. Tente novamente mais tarde.')
-    }
-  }
+  const { activeChatId, connectionStatus } = useWhatsAppStore()
 
   return (
     <div className="h-full w-full bg-muted/30 dark:bg-background flex animate-fade-in relative overflow-hidden">
@@ -43,30 +25,26 @@ const Chat = () => {
           activeChatId ? 'flex' : 'hidden sm:flex',
         )}
       >
-        {activeChatId ? (
-          <WhatsAppActiveChat />
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center relative p-6">
-            <div className="absolute inset-0 opacity-40 dark:opacity-10 bg-[url('https://img.usecurling.com/p/800/800?q=pattern&color=gray')] pointer-events-none mix-blend-multiply dark:mix-blend-screen" />
-
-            <div className="relative z-10 bg-card/90 backdrop-blur-md p-8 rounded-3xl shadow-sm text-center max-w-md border border-border/60">
-              <div className="h-20 w-20 bg-background rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_4px_14px_-4px_rgba(37,211,102,0.4)] dark:shadow-none border border-border/50">
-                <MessageCircle className="h-10 w-10 text-[#25D366]" />
+        {connectionStatus === 'connected' ? (
+          activeChatId ? (
+            <WhatsAppActiveChat />
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center relative p-6">
+              <div className="absolute inset-0 opacity-40 dark:opacity-10 bg-[url('https://img.usecurling.com/p/800/800?q=pattern&color=gray')] pointer-events-none mix-blend-multiply dark:mix-blend-screen" />
+              <div className="relative z-10 text-center max-w-md animate-fade-in-up">
+                <div className="h-24 w-24 bg-card/80 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-border/50 text-muted-foreground/30">
+                  <MessageCircle className="h-12 w-12" />
+                </div>
+                <h2 className="text-2xl font-semibold text-foreground mb-2">WhatsApp Conectado</h2>
+                <p className="text-muted-foreground leading-relaxed">
+                  Selecione uma conversa no painel lateral para começar a enviar e receber
+                  mensagens.
+                </p>
               </div>
-              <h2 className="text-2xl font-bold text-foreground mb-3">WhatsApp Web</h2>
-              <p className="text-muted-foreground leading-relaxed mb-6">
-                Selecione ou inicie uma conversa no painel lateral. As mensagens são sincronizadas
-                automaticamente com o CRM do ClinicFlow.
-              </p>
-              <Button
-                onClick={handleStartWhatsApp}
-                className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white gap-2 rounded-full h-12"
-              >
-                <Power className="w-5 h-5" />
-                Iniciar Conexão (Servidor)
-              </Button>
             </div>
-          </div>
+          )
+        ) : (
+          <WhatsAppConnectionScreen />
         )}
       </div>
     </div>

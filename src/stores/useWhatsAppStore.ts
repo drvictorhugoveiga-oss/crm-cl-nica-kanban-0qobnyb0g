@@ -1,8 +1,18 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+  useMemo,
+  useCallback,
+} from 'react'
 import { supabase } from '@/lib/supabase/client'
 import useLeadStore from './useLeadStore'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import { toast } from 'sonner'
+
+export type ConnectionStatus = 'idle' | 'disconnected' | 'connecting' | 'qr' | 'connected'
 
 export interface Message {
   id: string
@@ -32,6 +42,11 @@ interface WhatsAppStore {
   setActiveChatId: (id: string | null) => void
   sendMessage: (phone: string, text: string) => Promise<void>
   isLoading: boolean
+  connectionStatus: ConnectionStatus
+  qrCode: string | null
+  startConnection: () => Promise<void>
+  checkConnection: () => Promise<void>
+  logout: () => Promise<void>
 }
 
 const WhatsAppContext = createContext<WhatsAppStore | undefined>(undefined)
@@ -41,6 +56,8 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([])
   const [activeChatId, setActiveChatIdState] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle')
+  const [qrCode, setQrCode] = useState<string | null>(null)
   const { leads } = useLeadStore()
 
   const phoneNumbersStr = useMemo(() => {
@@ -48,6 +65,72 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
       .sort()
       .join(',')
   }, [leads])
+
+  const checkConnection = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('whatsapp-handler', {
+        body: { action: 'status' },
+      })
+      if (error) throw error
+      if (data?.status) {
+        setConnectionStatus(data.status)
+        if (data.status === 'connected') setQrCode(null)
+      }
+    } catch (err) {
+      console.error('Failed to check WhatsApp status', err)
+    }
+  }, [])
+
+  const startConnection = async () => {
+    setConnectionStatus('connecting')
+    try {
+      const { data, error } = await supabase.functions.invoke('whatsapp-handler', {
+        body: { action: 'start' },
+      })
+      if (error) throw error
+
+      if (data?.qr) {
+        setQrCode(data.qr)
+        setConnectionStatus('qr')
+      } else if (data?.status === 'connected') {
+        setConnectionStatus('connected')
+        toast.success('WhatsApp conectado com sucesso!')
+      } else {
+        setConnectionStatus('disconnected')
+      }
+    } catch (err) {
+      setConnectionStatus('disconnected')
+      toast.error('Erro ao iniciar conexão com o WhatsApp.')
+    }
+  }
+
+  const logout = async () => {
+    try {
+      const { error } = await supabase.functions.invoke('whatsapp-handler', {
+        body: { action: 'logout' },
+      })
+      if (error) throw error
+      setConnectionStatus('disconnected')
+      setQrCode(null)
+      toast.success('Sessão do WhatsApp encerrada.')
+    } catch (err) {
+      toast.error('Erro ao desconectar.')
+    }
+  }
+
+  // Poll connection status while connecting or showing QR
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>
+    if (connectionStatus === 'qr' || connectionStatus === 'connecting') {
+      interval = setInterval(() => checkConnection(), 4000)
+    }
+    return () => clearInterval(interval)
+  }, [connectionStatus, checkConnection])
+
+  // Initial status check
+  useEffect(() => {
+    checkConnection()
+  }, [checkConnection])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -60,73 +143,23 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      const CACHE_KEY = 'crm_messages_cache'
-      let hasCache = false
-      const cachedStr = localStorage.getItem(CACHE_KEY)
-      if (cachedStr) {
-        try {
-          const parsed = JSON.parse(cachedStr)
-          if (Array.isArray(parsed)) {
-            const cachedPhones = [...new Set(parsed.map((m: any) => m.phone))]
-            const isSubset = cachedPhones.every((p) => typeof p === 'string' && phones.includes(p))
-            if (isSubset) {
-              setMessages((prev) => (prev.length === 0 ? parsed : prev))
-              hasCache = true
-            }
-          }
-        } catch (e) {
-          // ignore cache parse error
-        }
-      }
-
-      if (!hasCache) setIsLoading(true)
-
+      setIsLoading(true)
       try {
-        const queryFn = async () => {
-          const q = supabase
-            .from('messages')
-            .select('*')
-            .in('phone', phones)
-            .order('timestamp', { ascending: true })
-
-          q.abortSignal(controller.signal)
-          return await q
-        }
-
-        const { data, error } = await fetchWithRetry(queryFn, 3, 1000, controller.signal)
-        if (controller.signal.aborted) return
-
-        if (error) {
-          const msg = error.message || ''
-          if (
-            error.name !== 'AbortError' &&
-            !msg.includes('Aborted') &&
-            !msg.includes('aborted without reason')
-          ) {
-            console.error('Error loading messages:', error)
-          }
-          return
-        }
-
-        if (data) {
+        const { data, error } = await fetchWithRetry(
+          async () =>
+            supabase
+              .from('messages')
+              .select('*')
+              .in('phone', phones)
+              .order('timestamp', { ascending: true })
+              .abortSignal(controller.signal),
+          3,
+          1000,
+          controller.signal,
+        )
+        if (!controller.signal.aborted && !error && data) {
           setMessages(data as Message[])
-          try {
-            localStorage.setItem(CACHE_KEY, JSON.stringify(data))
-          } catch (e) {
-            /* ignore */
-          }
         }
-      } catch (err: any) {
-        const msg = err?.message || ''
-        if (
-          controller.signal.aborted ||
-          err?.name === 'AbortError' ||
-          msg.includes('Aborted') ||
-          msg.includes('aborted without reason')
-        ) {
-          return
-        }
-        console.error('Unhandled error in fetchMessages:', err)
       } finally {
         if (!controller.signal.aborted) setIsLoading(false)
       }
@@ -144,17 +177,16 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
           const newMsg = payload.new as Message
           if (newMsg && phones.includes(newMsg.phone)) {
             if (!controller.signal.aborted) {
-              fetchMessages()
+              setMessages((prev) => {
+                if (prev.find((m) => m.id === newMsg.id)) return prev
+                return [...prev, newMsg]
+              })
               if (newMsg.direction === 'incoming') {
                 const leadMatch = leads.find(
                   (l) => (l.phone?.replace(/\D/g, '') || l.phone) === newMsg.phone,
                 )
                 const senderName = leadMatch ? leadMatch.name : newMsg.phone
-                const snippet =
-                  newMsg.message_text.length > 40
-                    ? newMsg.message_text.substring(0, 40) + '...'
-                    : newMsg.message_text
-                toast.info(`Nova mensagem de ${senderName}: ${snippet}`)
+                toast.info(`Nova mensagem de ${senderName}`)
               }
             }
           }
@@ -187,6 +219,11 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
   }
 
   const sendMessage = async (phone: string, text: string) => {
+    if (connectionStatus !== 'connected') {
+      toast.error('WhatsApp não está conectado.')
+      return
+    }
+
     const tempId = Date.now().toString()
     const tempMsg: Message = {
       id: tempId,
@@ -197,20 +234,16 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
       read: true,
     }
 
-    // Optimistic UI update
     setMessages((prev) => [...prev, tempMsg])
 
     try {
       const { data, error } = await supabase.functions.invoke('whatsapp-handler', {
         body: { action: 'send', phone, message: text },
       })
-
       if (error) throw error
       if (data?.error) throw new Error(data.error)
-    } catch (err: any) {
-      console.error('Failed to send message:', err)
-      toast.error('Erro de comunicação ao enviar mensagem. Verifique a conexão.')
-      // Rollback optimistic update on failure
+    } catch (err) {
+      toast.error('Erro ao enviar mensagem.')
       setMessages((prev) => prev.filter((m) => m.id !== tempId))
     }
   }
@@ -231,10 +264,7 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
   })
 
   messages.forEach((msg) => {
-    const phone = msg.phone
-    const existing = chatsMap.get(phone)
-    const leadMatch = leads.find((l) => (l.phone?.replace(/\D/g, '') || l.phone) === phone)
-    const leadName = leadMatch ? leadMatch.name : phone
+    const existing = chatsMap.get(msg.phone)
     const time = new Date(msg.timestamp).toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit',
@@ -245,12 +275,12 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
       existing.lastMessage = msg.message_text
       existing.lastMessageTime = time
       if (msg.direction === 'incoming' && !msg.read) existing.unread += 1
-      if (!existing.leadName || existing.leadName === phone) existing.leadName = leadName
     } else {
-      chatsMap.set(phone, {
-        id: phone,
-        leadName,
-        phone,
+      const leadMatch = leads.find((l) => (l.phone?.replace(/\D/g, '') || l.phone) === msg.phone)
+      chatsMap.set(msg.phone, {
+        id: msg.phone,
+        leadName: leadMatch ? leadMatch.name : msg.phone,
+        phone: msg.phone,
         lastMessage: msg.message_text,
         lastMessageTime: time,
         unread: msg.direction === 'incoming' && !msg.read ? 1 : 0,
@@ -279,6 +309,11 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
         setActiveChatId,
         sendMessage,
         isLoading,
+        connectionStatus,
+        qrCode,
+        startConnection,
+        checkConnection,
+        logout,
       },
     },
     children,
