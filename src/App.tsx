@@ -13,6 +13,7 @@ import Relatorios from './pages/Relatorios'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import PrivacySettings from './pages/PrivacySettings'
 import Settings from './pages/Settings'
+import Ajuda from './pages/Ajuda'
 import { LeadProvider } from './stores/useLeadStore'
 import { AuthProvider } from './hooks/use-auth'
 import { WhatsAppProvider } from './stores/useWhatsAppStore'
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="politica-privacidade" element={<PrivacyPolicy />} />
               <Route path="configuracoes-privacidade" element={<PrivacySettings />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="ajuda" element={<Ajuda />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

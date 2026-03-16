@@ -33,6 +33,47 @@ export type Database = {
         }
         Relationships: []
       }
+      chatbot_interactions: {
+        Row: {
+          bot_response: string | null
+          created_at: string
+          id: string
+          lead_id: string | null
+          metadata: Json | null
+          platform: string
+          session_id: string
+          user_message: string | null
+        }
+        Insert: {
+          bot_response?: string | null
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          metadata?: Json | null
+          platform: string
+          session_id: string
+          user_message?: string | null
+        }
+        Update: {
+          bot_response?: string | null
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          metadata?: Json | null
+          platform?: string
+          session_id?: string
+          user_message?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'chatbot_interactions_lead_id_fkey'
+            columns: ['lead_id']
+            isOneToOne: false
+            referencedRelation: 'leads'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       kanban_columns: {
         Row: {
           color: string
@@ -198,6 +239,13 @@ export type Database = {
             columns: ['lead_id']
             isOneToOne: false
             referencedRelation: 'leads'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'notes_user_id_profiles_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
         ]
@@ -447,6 +495,15 @@ export const Constants = {
 //   action: text (not null)
 //   timestamp: timestamp with time zone (not null, default: now())
 //   details: jsonb (nullable)
+// Table: chatbot_interactions
+//   id: uuid (not null, default: gen_random_uuid())
+//   lead_id: uuid (nullable)
+//   session_id: text (not null)
+//   user_message: text (nullable)
+//   bot_response: text (nullable)
+//   metadata: jsonb (nullable, default: '{}'::jsonb)
+//   platform: text (not null)
+//   created_at: timestamp with time zone (not null, default: now())
 // Table: kanban_columns
 //   id: uuid (not null, default: gen_random_uuid())
 //   user_id: uuid (not null)
@@ -515,6 +572,10 @@ export const Constants = {
 // Table: audit_logs
 //   PRIMARY KEY audit_logs_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY audit_logs_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+// Table: chatbot_interactions
+//   FOREIGN KEY chatbot_interactions_lead_id_fkey: FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE SET NULL
+//   PRIMARY KEY chatbot_interactions_pkey: PRIMARY KEY (id)
+//   CHECK chatbot_interactions_platform_check: CHECK ((platform = ANY (ARRAY['website'::text, 'whatsapp'::text])))
 // Table: kanban_columns
 //   PRIMARY KEY kanban_columns_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY kanban_columns_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
@@ -534,6 +595,7 @@ export const Constants = {
 //   FOREIGN KEY notes_lead_id_fkey: FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
 //   PRIMARY KEY notes_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY notes_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL
+//   FOREIGN KEY notes_user_id_profiles_fkey: FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE SET NULL
 // Table: profiles
 //   FOREIGN KEY profiles_id_fkey: FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
 //   PRIMARY KEY profiles_pkey: PRIMARY KEY (id)
@@ -551,6 +613,14 @@ export const Constants = {
 //     WITH CHECK: (auth.uid() = user_id)
 //   Policy "Users can view their own logs" (SELECT, PERMISSIVE) roles={authenticated}
 //     USING: (auth.uid() = user_id)
+// Table: chatbot_interactions
+//   Policy "Enable all access for authenticated users chatbot" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
+//   Policy "Enable insert for anon chatbot" (INSERT, PERMISSIVE) roles={anon}
+//     WITH CHECK: true
+//   Policy "Enable select for anon chatbot session" (SELECT, PERMISSIVE) roles={anon}
+//     USING: true
 // Table: kanban_columns
 //   Policy "Users can manage own columns" (ALL, PERMISSIVE) roles={public}
 //     USING: (auth.uid() = user_id)

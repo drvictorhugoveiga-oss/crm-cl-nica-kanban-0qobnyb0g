@@ -7,6 +7,7 @@ import {
   PieChart,
   ShieldAlert,
   BarChart,
+  HelpCircle,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -26,6 +27,7 @@ const items = [
   { title: 'Relatórios', url: '/relatorios', icon: BarChart },
   { title: 'WhatsApp Chat', url: '/chat', icon: MessageCircle },
   { title: 'Privacidade', url: '/configuracoes-privacidade', icon: ShieldAlert },
+  { title: 'Ajuda', url: '/ajuda', icon: HelpCircle },
   { title: 'Configurações', url: '/settings', icon: Settings },
 ]
 
