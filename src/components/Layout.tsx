@@ -3,6 +3,7 @@ import { SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from './AppSidebar'
 import { Header } from './Header'
 import { LGPDConsentModal } from './LGPDConsentModal'
+import { ChatWidget } from './ChatWidget'
 import { useIsMobile } from '@/hooks/use-mobile'
 
 export default function Layout() {
@@ -38,6 +39,7 @@ export default function Layout() {
             </footer>
           )}
           <LGPDConsentModal />
+          <ChatWidget />
         </main>
       </div>
     </SidebarProvider>
