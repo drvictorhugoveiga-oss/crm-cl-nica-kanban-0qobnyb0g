@@ -1,16 +1,18 @@
 import { Lead } from '@/types'
-import { Calendar, Mail, Phone, MoreHorizontal, Trash2 } from 'lucide-react'
+import { Calendar, Mail, Phone, MoreHorizontal, Trash2, MessageCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useKanbanStore } from '@/stores/useKanbanStore'
 import useLeadStore from '@/stores/useLeadStore'
+import { supabase } from '@/lib/supabase/client'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 const ORIGIN_COLORS: Record<string, string> = {
   'Google Ads': 'bg-blue-100 text-blue-700',
@@ -37,6 +39,28 @@ export function KanbanCard({ lead }: { lead: Lead }) {
 
   const handleDragEnd = () => setIsDragging(false)
 
+  const cleanPhone = (lead.phone || '').replace(/\D/g, '')
+  const hasPhone = cleanPhone.length > 0
+
+  const handleWhatsAppClick = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!hasPhone) return
+
+    window.open(`https://wa.me/${cleanPhone}`, '_blank', 'noopener,noreferrer')
+
+    try {
+      await supabase.from('messages').insert({
+        lead_id: lead.id,
+        phone: cleanPhone,
+        message_text: 'WhatsApp conversation initiated via Kanban',
+        direction: 'outgoing',
+        read: true,
+      })
+    } catch (error) {
+      console.error('Error logging WhatsApp message:', error)
+    }
+  }
+
   return (
     <div
       draggable
@@ -57,7 +81,7 @@ export function KanbanCard({ lead }: { lead: Lead }) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 -mr-2 -mt-1 text-slate-400 hover:text-slate-700 opacity-0 group-hover:opacity-100 transition-all duration-200 ease-in-out focus-visible:opacity-100 data-[state=open]:opacity-100"
+              className="h-6 w-6 -mr-2 -mt-1 text-slate-400 hover:text-slate-700 opacity-0 group-hover:opacity-100 transition-all duration-200 ease-in-out focus-visible:opacity-100 data-[state=open]:opacity-100 shrink-0"
             >
               <MoreHorizontal className="h-4 w-4" />
             </Button>
@@ -74,13 +98,38 @@ export function KanbanCard({ lead }: { lead: Lead }) {
         </DropdownMenu>
       </div>
 
-      <div className="flex flex-col gap-1.5 text-[13px] text-slate-600">
-        <div className="flex items-center gap-2 group/contact">
-          <Phone className="h-3.5 w-3.5 text-slate-400 group-hover/contact:text-primary transition-colors duration-300 shrink-0" />
-          <span className="truncate">{lead.phone}</span>
+      <div className="flex flex-col gap-2 text-[13px] text-slate-600">
+        <div className="flex items-center justify-between group/contact min-h-8">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <Phone className="h-3.5 w-3.5 text-slate-400 group-hover/contact:text-primary transition-colors duration-300 shrink-0" />
+            <span className="truncate">{lead.phone || 'Sem telefone'}</span>
+          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                type="button"
+                className={cn(
+                  'h-8 w-8 rounded-full shrink-0 transition-all duration-200 ml-2',
+                  hasPhone
+                    ? 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 bg-emerald-50/50 shadow-sm'
+                    : 'text-slate-300 hover:bg-transparent hover:text-slate-300 cursor-not-allowed opacity-60',
+                )}
+                onClick={handleWhatsAppClick}
+              >
+                <MessageCircle className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="px-2 py-1.5">
+              <p className="text-xs font-medium">
+                {hasPhone ? 'Iniciar conversa no WhatsApp' : 'Telefone não cadastrado'}
+              </p>
+            </TooltipContent>
+          </Tooltip>
         </div>
         {lead.email && (
-          <div className="flex items-center gap-2 group/contact">
+          <div className="flex items-center gap-2 group/contact min-h-8">
             <Mail className="h-3.5 w-3.5 text-slate-400 group-hover/contact:text-primary transition-colors duration-300 shrink-0" />
             <span className="truncate" title={lead.email}>
               {lead.email}
@@ -89,7 +138,7 @@ export function KanbanCard({ lead }: { lead: Lead }) {
         )}
       </div>
 
-      <div className="flex items-center justify-between mt-2 pt-3 border-t border-slate-100/80">
+      <div className="flex items-center justify-between mt-1 pt-3 border-t border-slate-100/80">
         <span
           className={cn(
             'px-2 py-0.5 rounded-md text-[11px] font-semibold whitespace-nowrap tracking-wide transition-all duration-300',

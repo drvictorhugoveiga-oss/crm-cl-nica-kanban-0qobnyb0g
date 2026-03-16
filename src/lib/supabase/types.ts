@@ -342,6 +342,7 @@ export const Constants = {
 // Table: kanban_columns
 //   PRIMARY KEY kanban_columns_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY kanban_columns_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+//   UNIQUE kanban_columns_user_title_unique: UNIQUE (user_id, title)
 // Table: leads
 //   PRIMARY KEY leads_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY leads_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
@@ -410,3 +411,7 @@ export const Constants = {
 //   END;
 //   $function$
 //
+
+// --- INDEXES ---
+// Table: kanban_columns
+//   CREATE UNIQUE INDEX kanban_columns_user_title_unique ON public.kanban_columns USING btree (user_id, title)
