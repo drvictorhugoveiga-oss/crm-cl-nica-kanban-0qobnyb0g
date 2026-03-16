@@ -257,7 +257,13 @@ export function LeadProvider({ children }: { children: ReactNode }) {
           if (decryptError) {
             const msg = decryptError.message?.toLowerCase() || ''
             if (!msg.includes('abort') && decryptError.name !== 'AbortError') {
-              console.error('Decryption error:', decryptError)
+              console.error('Decryption invoke error:', decryptError)
+              toast({
+                title: 'Aviso de Segurança',
+                description:
+                  'Serviço de criptografia indisponível ou inacessível. Os dados de contato podem estar ofuscados.',
+                variant: 'destructive',
+              })
             }
           }
 
@@ -274,7 +280,12 @@ export function LeadProvider({ children }: { children: ReactNode }) {
           if (invokeErr?.name === 'AbortError' || msg.includes('abort')) {
             return
           }
-          console.error('Decryption invoke failed:', invokeErr)
+          console.error('Decryption invoke failed globally:', invokeErr)
+          toast({
+            title: 'Aviso de Segurança',
+            description: 'Não foi possível conectar ao serviço de criptografia (LGPD).',
+            variant: 'destructive',
+          })
           const parsedLeads = data.map(mapRowToLead)
           setLeads(parsedLeads)
         }
@@ -320,6 +331,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
 
   const addLead = async (newLead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user?.id) return
+
     const rowToInsert = {
       name: newLead.name,
       email: newLead.email,
@@ -329,17 +341,50 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       lgpd_consent: newLead.lgpd_consent || false,
       user_id: user.id,
     }
-    const { data: encryptedData } = await supabase.functions.invoke('lgpd-encryption-handler', {
-      body: { action: 'encrypt', items: [rowToInsert] },
-    })
-    const { data, error } = await supabase
-      .from('leads')
-      .insert(encryptedData?.result?.[0] || rowToInsert)
-      .select()
-      .single()
+
+    let payloadToInsert = rowToInsert
+
+    try {
+      const { data: encryptedData, error: encryptError } = await supabase.functions.invoke(
+        'lgpd-encryption-handler',
+        {
+          body: { action: 'encrypt', items: [rowToInsert] },
+        },
+      )
+
+      if (encryptError) {
+        console.error('Encryption function error:', encryptError)
+        toast({
+          title: 'Erro de Segurança (LGPD)',
+          description: 'Falha ao criptografar os dados do paciente. Ação bloqueada.',
+          variant: 'destructive',
+        })
+        throw new Error('Encryption failed. Refusing to insert raw PII data.')
+      }
+
+      if (!encryptedData?.result || !encryptedData.result[0]) {
+        toast({
+          title: 'Erro de Segurança',
+          description: 'A resposta do serviço de criptografia foi inválida.',
+          variant: 'destructive',
+        })
+        throw new Error('Invalid encryption response.')
+      }
+
+      payloadToInsert = encryptedData.result[0]
+    } catch (err) {
+      console.error('Error in encryption pipeline:', err)
+      throw err // Stop execution, do not save unencrypted data
+    }
+
+    const { data, error } = await supabase.from('leads').insert(payloadToInsert).select().single()
 
     if (error) {
-      toast({ title: 'Erro', description: 'Erro ao adicionar lead', variant: 'destructive' })
+      toast({
+        title: 'Erro',
+        description: 'Erro ao adicionar lead ao banco de dados',
+        variant: 'destructive',
+      })
       throw error
     }
 
@@ -357,7 +402,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         /* ignore */
       }
-      toast({ title: 'Sucesso', description: 'Novo lead criado com sucesso!' })
+      toast({ title: 'Sucesso', description: 'Novo lead criado com sucesso e criptografado!' })
       await logAudit(user.id, 'Created Lead', { lead_id: data.id, source: newLead.origin })
     }
   }

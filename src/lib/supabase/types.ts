@@ -701,3 +701,6 @@ export const Constants = {
 // --- INDEXES ---
 // Table: kanban_columns
 //   CREATE UNIQUE INDEX kanban_columns_user_title_unique ON public.kanban_columns USING btree (user_id, title)
+// Table: messages
+//   CREATE INDEX idx_messages_phone ON public.messages USING btree (phone)
+//   CREATE INDEX idx_messages_timestamp ON public.messages USING btree ("timestamp")
