@@ -26,6 +26,7 @@ export interface Chat {
 interface WhatsAppStore {
   isOpen: boolean
   toggleSidebar: () => void
+  closeSidebar: () => void
   chats: Chat[]
   activeChatId: string | null
   setActiveChatId: (id: string | null) => void
@@ -168,6 +169,7 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
   }, [phoneNumbersStr, leads])
 
   const toggleSidebar = () => setIsOpen((prev) => !prev)
+  const closeSidebar = () => setIsOpen(false)
 
   const setActiveChatId = async (id: string | null) => {
     setActiveChatIdState(id)
@@ -271,6 +273,7 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
       value: {
         isOpen,
         toggleSidebar,
+        closeSidebar,
         chats,
         activeChatId,
         setActiveChatId,

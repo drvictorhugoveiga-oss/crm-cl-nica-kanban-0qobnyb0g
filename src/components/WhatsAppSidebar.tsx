@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Search, X, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,9 +10,12 @@ import useWhatsAppStore from '@/stores/useWhatsAppStore'
 import { cn } from '@/lib/utils'
 
 export function WhatsAppSidebar() {
-  const { chats, setActiveChatId, toggleSidebar, isLoading } = useWhatsAppStore()
+  const { chats, setActiveChatId, closeSidebar, isLoading } = useWhatsAppStore()
   const [search, setSearch] = useState('')
+  const location = useLocation()
+  const navigate = useNavigate()
 
+  const isChatPage = location.pathname === '/chat'
   const filteredChats = chats.filter((c) => c.leadName.toLowerCase().includes(search.toLowerCase()))
 
   return (
@@ -23,14 +27,16 @@ export function WhatsAppSidebar() {
           </div>
           Conversas
         </h2>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-11 w-11 sm:h-10 sm:w-10 text-muted-foreground hover:bg-accent rounded-full shrink-0"
-          onClick={toggleSidebar}
-        >
-          <X className="h-6 w-6 sm:h-5 sm:w-5" />
-        </Button>
+        {!isChatPage && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-11 w-11 sm:h-10 sm:w-10 text-muted-foreground hover:bg-accent rounded-full shrink-0"
+            onClick={closeSidebar}
+          >
+            <X className="h-6 w-6 sm:h-5 sm:w-5" />
+          </Button>
+        )}
       </div>
 
       <div className="p-3 border-b border-border/50 bg-card shrink-0">
@@ -66,7 +72,13 @@ export function WhatsAppSidebar() {
               <div
                 key={chat.id}
                 className="flex items-center gap-3 p-3 sm:p-3 hover:bg-muted/50 dark:hover:bg-slate-800 cursor-pointer border-b border-border/30 transition-colors animate-fade-in"
-                onClick={() => setActiveChatId(chat.id)}
+                onClick={() => {
+                  setActiveChatId(chat.id)
+                  if (!isChatPage) {
+                    closeSidebar()
+                    navigate('/chat')
+                  }
+                }}
               >
                 <Avatar className="h-14 w-14 sm:h-12 sm:w-12 shrink-0 border border-border/50">
                   <AvatarImage src={`https://img.usecurling.com/ppl/thumbnail?seed=${chat.id}`} />

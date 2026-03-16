@@ -26,7 +26,7 @@ export function WhatsAppActiveChat() {
   if (!activeChat) return null
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#EFEAE2] dark:bg-[#0b141a] animate-fade-in absolute inset-0 z-30 sm:relative">
+    <div className="flex flex-col h-full w-full bg-[#EFEAE2] dark:bg-[#0b141a] animate-fade-in relative z-10">
       <div className="h-[72px] sm:h-16 bg-muted/60 dark:bg-secondary/80 px-2 sm:px-4 flex items-center justify-between border-b border-border shrink-0 shadow-sm z-10">
         <div className="flex items-center gap-2">
           <Button
