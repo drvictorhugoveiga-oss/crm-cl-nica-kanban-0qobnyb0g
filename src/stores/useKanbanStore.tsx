@@ -12,7 +12,7 @@ interface KanbanStore {
   addColumn: (title: string, color: string) => Promise<void>
   updateColumn: (id: string, title: string, color: string) => Promise<void>
   deleteColumn: (id: string) => Promise<void>
-  reorderColumns: (sourceId: string, targetId: string) => Promise<void>
+  reorderColumns: (sourceId: string, targetIndex: number) => Promise<void>
 }
 
 const KanbanContext = createContext<KanbanStore | undefined>(undefined)
@@ -74,7 +74,6 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
         fetchLeads()
       }
     } else if (data) {
-      // Ensure local state uniqueness just in case
       const uniqueData = data.filter(
         (col, index, self) =>
           index === self.findIndex((t) => t.title.toLowerCase() === col.title.toLowerCase()),
@@ -180,14 +179,13 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
     toast.success('Coluna excluída e leads movidos', { duration: 3000 })
   }
 
-  const reorderColumns = async (sourceId: string, targetId: string) => {
+  const reorderColumns = async (sourceId: string, targetIndex: number) => {
     const newCols = [...columns]
     const srcIdx = newCols.findIndex((c) => c.id === sourceId)
-    const tgtIdx = newCols.findIndex((c) => c.id === targetId)
-    if (srcIdx === -1 || tgtIdx === -1) return
+    if (srcIdx === -1 || targetIndex < 0 || targetIndex >= newCols.length) return
 
     const [moved] = newCols.splice(srcIdx, 1)
-    newCols.splice(tgtIdx, 0, moved)
+    newCols.splice(targetIndex, 0, moved)
 
     const updated = newCols.map((c, idx) => ({ ...c, position: idx }))
     setColumns(updated)
@@ -197,11 +195,16 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
         supabase.from('kanban_columns').update({ position: col.position }).eq('id', col.id),
       ),
     )
-      .then(() => {
-        toast.success('Colunas reordenadas com sucesso!', { duration: 3000 })
+      .then((results) => {
+        const hasError = results.some((r) => r.error)
+        if (hasError) {
+          toast.error('Error saving funnel stages order', { duration: 4000 })
+        } else {
+          toast.success('Funnel stages reorganized successfully', { duration: 3000 })
+        }
       })
       .catch(() => {
-        toast.error('Erro ao reordenar colunas no banco de dados', { duration: 4000 })
+        toast.error('Error saving funnel stages order', { duration: 4000 })
       })
   }
 

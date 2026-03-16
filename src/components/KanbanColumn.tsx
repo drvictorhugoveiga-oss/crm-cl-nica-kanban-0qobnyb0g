@@ -12,7 +12,7 @@ interface KanbanColumnProps {
 
 export function KanbanColumn({ column }: KanbanColumnProps) {
   const { leads, updateLeadStage, searchQuery, sourceFilter, dateRange, isLoading } = useLeadStore()
-  const { reorderColumns } = useKanbanStore()
+  const { reorderColumns, columns } = useKanbanStore()
   const [isOver, setIsOver] = useState(false)
   const dragCounter = useRef(0)
 
@@ -81,7 +81,10 @@ export function KanbanColumn({ column }: KanbanColumnProps) {
     } else if (type === 'column') {
       const sourceColId = e.dataTransfer.getData('colId')
       if (sourceColId && sourceColId !== column.id) {
-        reorderColumns(sourceColId, column.id)
+        const targetIndex = columns.findIndex((c) => c.id === column.id)
+        if (targetIndex !== -1) {
+          reorderColumns(sourceColId, targetIndex)
+        }
       }
     }
   }
