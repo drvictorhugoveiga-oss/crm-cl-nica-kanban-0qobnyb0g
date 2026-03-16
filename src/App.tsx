@@ -14,6 +14,7 @@ import PrivacySettings from './pages/PrivacySettings'
 import Settings from './pages/Settings'
 import Ajuda from './pages/Ajuda'
 import AdminContent from './pages/AdminContent'
+import WhatsApp from './pages/WhatsApp'
 import { LeadProvider } from './stores/useLeadStore'
 import { AuthProvider } from './hooks/use-auth'
 import { KanbanProvider } from './stores/useKanbanStore'
@@ -41,6 +42,7 @@ const App = () => (
               }
             >
               <Route index element={<Index />} />
+              <Route path="whatsapp" element={<WhatsApp />} />
               <Route path="analise-origem" element={<AnaliseOrigem />} />
               <Route path="relatorios" element={<Relatorios />} />
               <Route path="politica-privacidade" element={<PrivacyPolicy />} />

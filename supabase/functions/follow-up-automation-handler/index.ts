@@ -19,9 +19,9 @@ Deno.serve(async (req: Request) => {
   // Security Verification
   const authHeader = req.headers.get('Authorization')
   if (authHeader !== `Bearer ${supabaseServiceKey}`) {
-    return new Response(JSON.stringify({ error: 'Unauthorized. Service Role Key required.' }), { 
-      status: 401, 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    return new Response(JSON.stringify({ error: 'Unauthorized. Service Role Key required.' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
 
@@ -31,17 +31,20 @@ Deno.serve(async (req: Request) => {
       .select('id, follow_up_enabled, follow_up_template')
       .eq('follow_up_enabled', true)
 
-    if (profileError) throw profileError;
+    if (profileError) throw profileError
 
     if (!profiles || profiles.length === 0) {
-      return new Response(JSON.stringify({ success: true, message: 'No active automations configured.' }), { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      })
+      return new Response(
+        JSON.stringify({ success: true, message: 'No active automations configured.' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
     }
 
-    let processedCount = 0;
-    const now = Date.now();
-    const thresholdMs = 72 * 60 * 60 * 1000; // 72 hours
+    let processedCount = 0
+    const now = Date.now()
+    const thresholdMs = 72 * 60 * 60 * 1000 // 72 hours
 
     for (const profile of profiles) {
       const { data: leads, error: leadsError } = await supabase
@@ -49,15 +52,21 @@ Deno.serve(async (req: Request) => {
         .select('id, name, phone, created_at, status')
         .eq('user_id', profile.id)
 
-      if (leadsError || !leads) continue;
+      if (leadsError || !leads) continue
 
       for (const lead of leads) {
-        if (!lead.phone) continue;
-        
+        if (!lead.phone) continue
+
         // Skip leads that seem closed based on generic status strings
-        const s = lead.status.toLowerCase();
-        if (s.includes('ganh') || s.includes('perdid') || s.includes('won') || s.includes('lost') || s.includes('convertido')) {
-          continue;
+        const s = lead.status.toLowerCase()
+        if (
+          s.includes('ganh') ||
+          s.includes('perdid') ||
+          s.includes('won') ||
+          s.includes('lost') ||
+          s.includes('convertido')
+        ) {
+          continue
         }
 
         // Check last outgoing message explicitly
@@ -74,7 +83,13 @@ Deno.serve(async (req: Request) => {
           .from('lead_history')
           .select('timestamp')
           .eq('lead_id', lead.id)
-          .in('action_type', ['moved', 'follow_up_sent', 'message_received', 'note_added', 'task_created'])
+          .in('action_type', [
+            'moved',
+            'follow_up_sent',
+            'message_received',
+            'note_added',
+            'task_created',
+          ])
           .order('timestamp', { ascending: false })
           .limit(1)
 
@@ -85,8 +100,12 @@ Deno.serve(async (req: Request) => {
         const lastInteraction = Math.max(lastMsgTime, lastHistTime, createdTime)
 
         if (now - lastInteraction > thresholdMs) {
-          const messageTemplate = profile.follow_up_template || 'Olá [Name], notei que não conversamos nos últimos dias. Gostaria de tirar alguma dúvida pendente?'
-          const messageText = messageTemplate.replace(/\[Name\]/gi, lead.name).replace(/{name}/gi, lead.name)
+          const messageTemplate =
+            profile.follow_up_template ||
+            'Olá [Name], notei que não conversamos nos últimos dias. Gostaria de tirar alguma dúvida pendente?'
+          const messageText = messageTemplate
+            .replace(/\[Name\]/gi, lead.name)
+            .replace(/{name}/gi, lead.name)
 
           // We explicitly insert into messages here to ensure lead_id is correctly mapped
           const { error: msgError } = await supabase.from('messages').insert({
@@ -94,23 +113,23 @@ Deno.serve(async (req: Request) => {
             phone: lead.phone,
             message_text: messageText,
             direction: 'outgoing',
-            read: true
+            read: true,
           })
 
           if (msgError) {
-             console.error(`Failed to create message for lead ${lead.id}:`, msgError)
-             continue;
+            console.error(`Failed to create message for lead ${lead.id}:`, msgError)
+            continue
           }
 
           // Trigger simulated WhatsApp Provider API (Integration with Edge Function)
           try {
-             await supabase.functions.invoke('whatsapp-handler', {
-                body: { action: 'send', phone: lead.phone, message: messageText },
-                headers: { Authorization: `Bearer ${supabaseServiceKey}` } // Overwrite anon logic
-             })
-          } catch(e) {
-             console.warn("WhatsApp Provider API Simulation Call Failed: ", e)
-             // Edge function might fail due to simulation limits but shouldn't block the logic
+            await supabase.functions.invoke('whatsapp-handler', {
+              body: { action: 'send', phone: lead.phone, message: messageText },
+              headers: { Authorization: `Bearer ${supabaseServiceKey}` }, // Overwrite anon logic
+            })
+          } catch (e) {
+            console.warn('WhatsApp Provider API Simulation Call Failed: ', e)
+            // Edge function might fail due to simulation limits but shouldn't block the logic
           }
 
           // Record history of automation run
@@ -118,22 +137,22 @@ Deno.serve(async (req: Request) => {
             lead_id: lead.id,
             action_type: 'follow_up_sent',
             description: `Lembrete automático enviado via WhatsApp: ${messageText}`,
-            user_id: profile.id
+            user_id: profile.id,
           })
-          
-          processedCount++;
+
+          processedCount++
         }
       }
     }
 
-    return new Response(JSON.stringify({ success: true, processed_leads: processedCount }), { 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    return new Response(JSON.stringify({ success: true, processed_leads: processedCount }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error: any) {
-    console.error('Follow-up automation error:', error);
-    return new Response(JSON.stringify({ error: error.message }), { 
-      status: 500, 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    console.error('Follow-up automation error:', error)
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
 })

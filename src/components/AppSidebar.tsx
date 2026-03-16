@@ -8,6 +8,7 @@ import {
   BarChart,
   HelpCircle,
   Database,
+  MessageSquare,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -23,6 +24,7 @@ import { cn } from '@/lib/utils'
 
 const items = [
   { title: 'Leads Kanban', url: '/', icon: Users },
+  { title: 'WhatsApp', url: '/whatsapp', icon: MessageSquare },
   { title: 'Análise de Origem', url: '/analise-origem', icon: PieChart },
   { title: 'Relatórios', url: '/relatorios', icon: BarChart },
   { title: 'Privacidade', url: '/configuracoes-privacidade', icon: ShieldAlert },
