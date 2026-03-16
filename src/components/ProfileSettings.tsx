@@ -35,12 +35,22 @@ export function ProfileSettings() {
 
   useEffect(() => {
     if (user) {
+      // Use maybeSingle() instead of single() to prevent HTTP 406/PGRST116 errors
+      // if the profile record hasn't been created yet.
       supabase
         .from('profiles')
         .select('full_name')
         .eq('id', user.id)
-        .single()
-        .then(({ data }) => {
+        .maybeSingle()
+        .then(({ data, error }) => {
+          if (error) {
+            toast.error('Erro ao carregar dados do perfil', {
+              description: 'Ocorreu um problema ao buscar suas informações.',
+              duration: 4000,
+            })
+            return
+          }
+
           form.reset({
             fullName: data?.full_name || user.user_metadata?.name || '',
           })
