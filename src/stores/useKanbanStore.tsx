@@ -26,61 +26,95 @@ export function KanbanProvider({ children }: { children: React.ReactNode }) {
   const fetchColumns = useCallback(async () => {
     if (!user?.id) return
     setIsLoading(true)
-    const { data, error } = await supabase
-      .from('kanban_columns')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('position', { ascending: true })
 
-    if (!error && (!data || data.length === 0)) {
-      const defaults = [
-        { user_id: user.id, title: 'Novo Contato', color: '#3b82f6', position: 0 },
-        { user_id: user.id, title: 'Agendado', color: '#a855f7', position: 1 },
-        { user_id: user.id, title: 'Em Atendimento', color: '#f97316', position: 2 },
-        { user_id: user.id, title: 'Convertido', color: '#10b981', position: 3 },
-        { user_id: user.id, title: 'Perdido', color: '#ef4444', position: 4 },
-      ]
-      const { data: inserted } = await supabase.from('kanban_columns').insert(defaults).select()
+    try {
+      const { data, error } = await supabase
+        .from('kanban_columns')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('position', { ascending: true })
 
-      if (inserted) {
-        setColumns(inserted)
-        await Promise.all([
-          supabase
-            .from('leads')
-            .update({ status: 'Novo Contato' })
-            .eq('status', 'novo_contato')
-            .eq('user_id', user.id),
-          supabase
-            .from('leads')
-            .update({ status: 'Agendado' })
-            .eq('status', 'agendado')
-            .eq('user_id', user.id),
-          supabase
-            .from('leads')
-            .update({ status: 'Em Atendimento' })
-            .eq('status', 'em_atendimento')
-            .eq('user_id', user.id),
-          supabase
-            .from('leads')
-            .update({ status: 'Convertido' })
-            .eq('status', 'convertido')
-            .eq('user_id', user.id),
-          supabase
-            .from('leads')
-            .update({ status: 'Perdido' })
-            .eq('status', 'perdido')
-            .eq('user_id', user.id),
-        ])
-        fetchLeads()
+      if (error) throw error
+
+      if (!data || data.length === 0) {
+        const defaults = [
+          { user_id: user.id, title: 'Novo Contato', color: '#3b82f6', position: 0 },
+          { user_id: user.id, title: 'Agendado', color: '#a855f7', position: 1 },
+          { user_id: user.id, title: 'Em Atendimento', color: '#f97316', position: 2 },
+          { user_id: user.id, title: 'Convertido', color: '#10b981', position: 3 },
+          { user_id: user.id, title: 'Perdido', color: '#ef4444', position: 4 },
+        ]
+        const { data: inserted, error: insertError } = await supabase
+          .from('kanban_columns')
+          .insert(defaults)
+          .select()
+
+        if (insertError) throw insertError
+
+        if (inserted) {
+          setColumns(inserted)
+          await Promise.all([
+            supabase
+              .from('leads')
+              .update({ status: 'Novo Contato' })
+              .eq('status', 'novo_contato')
+              .eq('user_id', user.id),
+            supabase
+              .from('leads')
+              .update({ status: 'Agendado' })
+              .eq('status', 'agendado')
+              .eq('user_id', user.id),
+            supabase
+              .from('leads')
+              .update({ status: 'Em Atendimento' })
+              .eq('status', 'em_atendimento')
+              .eq('user_id', user.id),
+            supabase
+              .from('leads')
+              .update({ status: 'Convertido' })
+              .eq('status', 'convertido')
+              .eq('user_id', user.id),
+            supabase
+              .from('leads')
+              .update({ status: 'Perdido' })
+              .eq('status', 'perdido')
+              .eq('user_id', user.id),
+          ])
+          fetchLeads()
+        }
+      } else {
+        const uniqueData = data.filter(
+          (col, index, self) =>
+            index === self.findIndex((t) => t.title.toLowerCase() === col.title.toLowerCase()),
+        )
+        setColumns(uniqueData)
       }
-    } else if (data) {
-      const uniqueData = data.filter(
-        (col, index, self) =>
-          index === self.findIndex((t) => t.title.toLowerCase() === col.title.toLowerCase()),
-      )
-      setColumns(uniqueData)
+    } catch (err) {
+      console.error('Failed to load kanban columns, applying safe fallbacks:', err)
+      // Provide robust fallback so the Kanban board tabs are always visible
+      const fallbackDefaults: KanbanColumnDef[] = [
+        {
+          id: 'fallback-1',
+          user_id: user.id,
+          title: 'Novo Contato',
+          color: '#3b82f6',
+          position: 0,
+        },
+        { id: 'fallback-2', user_id: user.id, title: 'Agendado', color: '#a855f7', position: 1 },
+        {
+          id: 'fallback-3',
+          user_id: user.id,
+          title: 'Em Atendimento',
+          color: '#f97316',
+          position: 2,
+        },
+        { id: 'fallback-4', user_id: user.id, title: 'Convertido', color: '#10b981', position: 3 },
+        { id: 'fallback-5', user_id: user.id, title: 'Perdido', color: '#ef4444', position: 4 },
+      ]
+      setColumns(fallbackDefaults)
+    } finally {
+      setIsLoading(false)
     }
-    setIsLoading(false)
   }, [user, fetchLeads])
 
   useEffect(() => {

@@ -45,11 +45,14 @@ export function AIInsightsPanel() {
         return
       }
 
-      if (data) {
+      if (data && Array.isArray(data)) {
         setSuggestions(data as SuggestionWithLead[])
+      } else {
+        setSuggestions([])
       }
     } catch (err: any) {
       console.warn('Failed to load AI insights:', err.message || err)
+      setSuggestions([])
     } finally {
       setLoading(false)
     }
@@ -137,6 +140,8 @@ export function AIInsightsPanel() {
     }
   }
 
+  const hasSuggestions = Array.isArray(suggestions) && suggestions.length > 0
+
   return (
     <div className="w-full bg-accent/30 border-b border-border p-4 sm:p-6 shrink-0 flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -158,7 +163,7 @@ export function AIInsightsPanel() {
           size="sm"
           onClick={handleAnalyze}
           disabled={analyzing}
-          className="gap-2 rounded-xl h-10 w-full sm:w-auto shrink-0 bg-background"
+          className="gap-2 rounded-xl h-10 w-full sm:w-auto shrink-0 bg-background hover:bg-accent"
         >
           {analyzing ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -191,7 +196,7 @@ export function AIInsightsPanel() {
             </Card>
           ))}
         </div>
-      ) : suggestions.length === 0 ? (
+      ) : !hasSuggestions ? (
         <div className="text-sm text-muted-foreground bg-card border border-dashed border-border/60 rounded-xl p-8 text-center flex flex-col items-center gap-3 shadow-sm">
           <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
             <BrainCircuit className="h-6 w-6 text-muted-foreground/70" />

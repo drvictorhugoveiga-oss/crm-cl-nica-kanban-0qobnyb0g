@@ -32,14 +32,16 @@ const Index = () => {
                 Acompanhe e gerencie a jornada dos seus leads.
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExport}
-              className="gap-2 shrink-0 h-11 sm:h-9 w-full sm:w-auto rounded-xl sm:rounded-md hover:bg-accent transition-all duration-300 ease-in-out"
-            >
-              <Download className="h-4 w-4" /> <span className="sm:inline">Exportar Dados</span>
-            </Button>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+                className="gap-2 shrink-0 h-11 sm:h-9 w-full sm:w-auto rounded-xl sm:rounded-md hover:bg-accent transition-all duration-300 ease-in-out"
+              >
+                <Download className="h-4 w-4" /> <span className="sm:inline">Exportar Dados</span>
+              </Button>
+            </div>
           </div>
         </div>
 
