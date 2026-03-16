@@ -8,6 +8,7 @@ import {
   ShieldAlert,
   BarChart,
   HelpCircle,
+  Database,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -28,6 +29,7 @@ const items = [
   { title: 'WhatsApp Chat', url: '/chat', icon: MessageCircle },
   { title: 'Privacidade', url: '/configuracoes-privacidade', icon: ShieldAlert },
   { title: 'Ajuda', url: '/ajuda', icon: HelpCircle },
+  { title: 'Admin Conteúdo', url: '/admin/content', icon: Database },
   { title: 'Configurações', url: '/settings', icon: Settings },
 ]
 

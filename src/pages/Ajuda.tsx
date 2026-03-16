@@ -13,8 +13,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 interface TutorialLink {
   id: string
   title: string
-  description: string
-  video_url: string
+  description?: string
+  video_url?: string
   category: string
 }
 
@@ -82,15 +82,17 @@ export default function Ajuda() {
                   key={tutorial.id}
                   className="overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border-border/50 flex flex-col"
                 >
-                  <div className="w-full aspect-video bg-muted relative">
-                    <iframe
-                      src={tutorial.video_url}
-                      title={tutorial.title}
-                      className="absolute inset-0 w-full h-full border-0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
+                  {tutorial.video_url && (
+                    <div className="w-full aspect-video bg-muted relative">
+                      <iframe
+                        src={tutorial.video_url}
+                        title={tutorial.title}
+                        className="absolute inset-0 w-full h-full border-0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  )}
                   <CardHeader className="flex-1">
                     <CardTitle className="text-base sm:text-lg leading-tight">
                       {tutorial.title}
