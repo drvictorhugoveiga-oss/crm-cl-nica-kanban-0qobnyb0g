@@ -1,13 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import { useAuth } from '@/hooks/use-auth'
 import { toast } from '@/hooks/use-toast'
 import { LeadHistoryItem } from '@/types'
 
 export function useLeadHistory(leadId: string | undefined) {
   const [history, setHistory] = useState<LeadHistoryItem[]>([])
   const [loading, setLoading] = useState(false)
-  const { user } = useAuth()
 
   const fetchHistory = useCallback(async () => {
     if (!leadId) return
@@ -34,7 +32,6 @@ export function useLeadHistory(leadId: string | undefined) {
     fetchHistory()
 
     if (!leadId) return
-    // Subscribe to realtime history updates for this specific lead
     const channel = supabase
       .channel(`lead_history_${leadId}`)
       .on(
@@ -56,25 +53,5 @@ export function useLeadHistory(leadId: string | undefined) {
     }
   }, [fetchHistory, leadId])
 
-  const addNote = async (content: string) => {
-    if (!leadId || !user?.id || !content.trim()) return
-    const { error } = await supabase.from('notes').insert({
-      lead_id: leadId,
-      content: content.trim(),
-      user_id: user.id,
-    })
-
-    if (error) {
-      toast({
-        title: 'Erro',
-        description: 'Erro ao adicionar nota.',
-        variant: 'destructive',
-      })
-    } else {
-      toast({ title: 'Sucesso', description: 'Nota adicionada com sucesso!' })
-      // History is updated automatically via DB trigger + Realtime subscription
-    }
-  }
-
-  return { history, loading, addNote, refresh: fetchHistory }
+  return { history, loading, refresh: fetchHistory }
 }

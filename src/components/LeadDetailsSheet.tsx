@@ -7,21 +7,20 @@ import {
 } from '@/components/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Textarea } from '@/components/ui/textarea'
-import { Button } from '@/components/ui/button'
 import { Lead } from '@/types'
 import { useLeadHistory } from '@/hooks/use-lead-history'
-import { useState } from 'react'
+import { LeadNotesTab } from './LeadNotesTab'
+import { LeadTasksTab } from './LeadTasksTab'
 import {
   Sparkles,
   ArrowRightLeft,
   MessageSquare,
   StickyNote,
-  Send,
   Calendar,
   MapPin,
   Mail,
   Phone,
+  CheckCircle2,
 } from 'lucide-react'
 
 interface LeadDetailsSheetProps {
@@ -31,14 +30,7 @@ interface LeadDetailsSheetProps {
 }
 
 export function LeadDetailsSheet({ lead, open, onOpenChange }: LeadDetailsSheetProps) {
-  const { history, loading, addNote } = useLeadHistory(open ? lead.id : undefined)
-  const [note, setNote] = useState('')
-
-  const handleAddNote = async () => {
-    if (!note.trim()) return
-    await addNote(note)
-    setNote('')
-  }
+  const { history, loading } = useLeadHistory(open ? lead.id : undefined)
 
   const getHistoryIcon = (type: string) => {
     switch (type) {
@@ -50,6 +42,8 @@ export function LeadDetailsSheet({ lead, open, onOpenChange }: LeadDetailsSheetP
         return <MessageSquare className="h-4 w-4 text-emerald-500" />
       case 'note_added':
         return <StickyNote className="h-4 w-4 text-purple-500" />
+      case 'task_created':
+        return <CheckCircle2 className="h-4 w-4 text-indigo-500" />
       default:
         return <Sparkles className="h-4 w-4 text-slate-400" />
     }
@@ -74,11 +68,21 @@ export function LeadDetailsSheet({ lead, open, onOpenChange }: LeadDetailsSheetP
           </SheetHeader>
         </div>
 
-        <Tabs defaultValue="history" className="flex-1 flex flex-col w-full">
+        <Tabs defaultValue="tasks" className="flex-1 flex flex-col w-full">
           <div className="px-6 pt-4 bg-white">
-            <TabsList className="w-full grid grid-cols-2">
-              <TabsTrigger value="details">Detalhes</TabsTrigger>
-              <TabsTrigger value="history">Histórico</TabsTrigger>
+            <TabsList className="w-full grid grid-cols-4 h-auto py-1">
+              <TabsTrigger value="details" className="text-xs py-2">
+                Detalhes
+              </TabsTrigger>
+              <TabsTrigger value="tasks" className="text-xs py-2">
+                Tarefas
+              </TabsTrigger>
+              <TabsTrigger value="notes" className="text-xs py-2">
+                Notas
+              </TabsTrigger>
+              <TabsTrigger value="history" className="text-xs py-2">
+                Histórico
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -117,28 +121,24 @@ export function LeadDetailsSheet({ lead, open, onOpenChange }: LeadDetailsSheetP
           </TabsContent>
 
           <TabsContent
+            value="tasks"
+            className="flex-1 flex flex-col mt-0 h-full px-6 bg-white border-t border-slate-100/50"
+          >
+            <LeadTasksTab leadId={lead.id} />
+          </TabsContent>
+
+          <TabsContent
+            value="notes"
+            className="flex-1 flex flex-col mt-0 h-full px-6 bg-white border-t border-slate-100/50"
+          >
+            <LeadNotesTab leadId={lead.id} />
+          </TabsContent>
+
+          <TabsContent
             value="history"
             className="flex-1 flex flex-col mt-0 h-full px-6 bg-white border-t border-slate-100/50"
           >
-            <div className="flex flex-col gap-2 mb-6 pt-6">
-              <Textarea
-                placeholder="Adicione uma nota sobre este lead..."
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                className="min-h-[80px] resize-none text-sm bg-slate-50/50 border-slate-200"
-              />
-              <Button
-                size="sm"
-                className="self-end"
-                onClick={handleAddNote}
-                disabled={!note.trim() || loading}
-              >
-                <Send className="h-3.5 w-3.5 mr-2" />
-                Salvar Nota
-              </Button>
-            </div>
-
-            <ScrollArea className="flex-1 -mx-2 px-2 pb-6">
+            <ScrollArea className="flex-1 -mx-2 px-2 py-6">
               <div className="relative border-l-2 border-slate-100 ml-4 py-2 space-y-8">
                 {loading && history.length === 0 && (
                   <p className="text-sm text-muted-foreground ml-6">Carregando...</p>
@@ -175,6 +175,11 @@ export function LeadDetailsSheet({ lead, open, onOpenChange }: LeadDetailsSheetP
                         {item.action_type === 'note_added' && (
                           <strong className="font-medium text-slate-900 block mb-1">
                             Nota adicionada
+                          </strong>
+                        )}
+                        {item.action_type === 'task_created' && (
+                          <strong className="font-medium text-slate-900 block mb-1">
+                            Tarefa criada
                           </strong>
                         )}
                         <p className="whitespace-pre-wrap leading-relaxed text-slate-600">
