@@ -1,6 +1,5 @@
 import { KanbanBoard } from '@/components/KanbanBoard'
 import { WhatsAppSidebar } from '@/components/WhatsAppSidebar'
-import { DashboardCards } from '@/components/DashboardCards'
 import useWhatsAppStore from '@/stores/useWhatsAppStore'
 import useLeadStore from '@/stores/useLeadStore'
 import { cn } from '@/lib/utils'
@@ -37,9 +36,9 @@ const Index = () => {
         <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 shrink-0 flex flex-col gap-4 shadow-sm z-10">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Dashboard</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Leads</h1>
               <p className="text-slate-500 text-xs sm:text-sm mt-1">
-                Acompanhe as métricas e gerencie a jornada dos seus leads.
+                Acompanhe e gerencie a jornada dos seus leads.
               </p>
             </div>
             <Button
@@ -84,9 +83,6 @@ const Index = () => {
         </div>
 
         <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
-          <div className="p-4 sm:px-6 sm:pt-6 pb-0 shrink-0">
-            <DashboardCards />
-          </div>
           <KanbanBoard />
         </div>
       </div>
