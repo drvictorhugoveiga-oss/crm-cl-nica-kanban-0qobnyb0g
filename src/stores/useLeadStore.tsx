@@ -225,6 +225,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
 
     const prevLeads = [...leads]
 
+    // Optimistically update UI
     setLeads((prev) =>
       prev.map((l) =>
         l.id === id ? { ...l, stage: newStage, updated_at: new Date().toISOString() } : l,
@@ -238,12 +239,13 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       .eq('user_id', user.id)
 
     if (error) {
+      // Revert optimistic update
       setLeads(prevLeads)
-      toast.error('Erro ao atualizar status do lead.')
+      toast.error('Erro ao atualizar o status do lead. Por favor, tente novamente.')
       return
     }
 
-    toast.success('Status atualizado!', { duration: 2500, position: 'bottom-right' })
+    toast.success('Status atualizado com sucesso!', { duration: 2500, position: 'bottom-right' })
     await logAudit(user.id, 'Updated Lead Stage', { lead_id: id, new_stage: newStage })
   }
 
