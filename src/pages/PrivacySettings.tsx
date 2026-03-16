@@ -31,53 +31,53 @@ export default function PrivacySettings() {
   }
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-[#F8FAFC]">
+    <div className="h-full w-full overflow-y-auto bg-background">
       <div className="p-8 max-w-4xl mx-auto animate-fade-in my-4">
-        <h1 className="text-3xl font-bold text-slate-800 mb-2">Configurações de Privacidade</h1>
-        <p className="text-slate-500 mb-8">
+        <h1 className="text-3xl font-bold text-foreground mb-2">Configurações de Privacidade</h1>
+        <p className="text-muted-foreground mb-8">
           Gerencie seus dados e preferências de privacidade de acordo com a LGPD.
         </p>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-8">
+        <div className="bg-card rounded-2xl shadow-sm border border-border p-6 mb-8">
           <div className="flex items-center gap-4 mb-6">
-            <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-              <ShieldAlert className="h-6 w-6 text-blue-600" />
+            <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+              <ShieldAlert className="h-6 w-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-slate-800">Seus Dados Pessoais</h2>
-              <p className="text-sm text-slate-500">
+              <h2 className="text-xl font-semibold text-foreground">Seus Dados Pessoais</h2>
+              <p className="text-sm text-muted-foreground">
                 Informações atualmente vinculadas à sua conta de usuário no ClinicFlow.
               </p>
             </div>
           </div>
 
-          <div className="space-y-4 ml-16 bg-slate-50 p-4 rounded-xl border border-slate-100">
+          <div className="space-y-4 ml-16 bg-muted/50 p-4 rounded-xl border border-border/50">
             <div>
-              <label className="text-sm font-medium text-slate-500">Nome Associado</label>
-              <p className="text-slate-800 font-medium">
+              <label className="text-sm font-medium text-muted-foreground">Nome Associado</label>
+              <p className="text-foreground font-medium">
                 {user?.user_metadata?.name || 'Não informado'}
               </p>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-500">Email Autenticado</label>
-              <p className="text-slate-800">{user?.email}</p>
+              <label className="text-sm font-medium text-muted-foreground">Email Autenticado</label>
+              <p className="text-foreground">{user?.email}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-500">
+              <label className="text-sm font-medium text-muted-foreground">
                 ID Único da Conta (Identificador do Sistema)
               </label>
-              <p className="text-slate-800 font-mono text-xs bg-white px-2 py-1 rounded inline-block border border-slate-200 mt-1">
+              <p className="text-foreground font-mono text-xs bg-card px-2 py-1 rounded inline-block border border-border mt-1">
                 {user?.id}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-red-50 rounded-2xl border border-red-100 p-8 shadow-sm">
-          <h2 className="text-xl font-semibold text-red-700 mb-3 flex items-center gap-2">
+        <div className="bg-red-50 dark:bg-red-950/20 rounded-2xl border border-red-100 dark:border-red-900/50 p-8 shadow-sm">
+          <h2 className="text-xl font-semibold text-red-700 dark:text-red-500 mb-3 flex items-center gap-2">
             Direito ao Esquecimento (Art. 18 LGPD)
           </h2>
-          <p className="text-sm text-red-600/90 mb-6 leading-relaxed max-w-3xl">
+          <p className="text-sm text-red-600/90 dark:text-red-400/90 mb-6 leading-relaxed max-w-3xl">
             De acordo com a Lei Geral de Proteção de Dados, você tem o direito de solicitar a
             exclusão permanente de todos os seus dados pessoais armazenados em nossos servidores.
             Esta ação é <strong>irreversível</strong> e resultará na perda total de acesso à sua

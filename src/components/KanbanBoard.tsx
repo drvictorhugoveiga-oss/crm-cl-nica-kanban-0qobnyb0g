@@ -68,7 +68,7 @@ export function KanbanBoard() {
   }, [])
 
   return (
-    <div className="flex flex-col h-full w-full bg-slate-50/50">
+    <div className="flex flex-col h-full w-full bg-background/50">
       <KanbanFilters />
       <div
         ref={scrollRef}
@@ -81,11 +81,11 @@ export function KanbanBoard() {
           Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="min-w-[280px] w-[85vw] sm:w-[320px] max-w-[350px] shrink-0 bg-slate-100/60 rounded-2xl h-full p-3 flex flex-col gap-3 snap-center"
+              className="min-w-[280px] w-[85vw] sm:w-[320px] max-w-[350px] shrink-0 bg-secondary/30 rounded-2xl h-full p-3 flex flex-col gap-3 snap-center border border-border/50"
             >
-              <Skeleton className="h-12 w-full rounded-xl" />
-              <Skeleton className="h-28 w-full rounded-xl" />
-              <Skeleton className="h-28 w-full rounded-xl" />
+              <Skeleton className="h-12 w-full rounded-xl bg-muted/50" />
+              <Skeleton className="h-28 w-full rounded-xl bg-muted/50" />
+              <Skeleton className="h-28 w-full rounded-xl bg-muted/50" />
             </div>
           ))
         ) : (
@@ -96,7 +96,7 @@ export function KanbanBoard() {
             <div className="min-w-[280px] w-[85vw] sm:w-[320px] max-w-[350px] shrink-0 snap-center pt-2">
               <Button
                 variant="outline"
-                className="w-full h-14 rounded-xl border-dashed border-2 border-slate-300 text-slate-500 hover:text-slate-700 hover:border-slate-400 bg-slate-50/50 hover:bg-slate-100/50 transition-all shadow-sm"
+                className="w-full h-14 rounded-xl border-dashed border-2 border-border/80 text-muted-foreground hover:text-foreground hover:border-border bg-background/50 hover:bg-accent/50 transition-all shadow-sm"
                 onClick={() => setIsDialogOpen(true)}
               >
                 <Plus className="w-5 h-5 mr-2" /> Adicionar Coluna

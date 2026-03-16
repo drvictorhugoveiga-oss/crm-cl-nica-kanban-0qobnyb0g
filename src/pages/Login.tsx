@@ -85,28 +85,30 @@ export default function Login() {
 
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center mb-2 animate-pulse">
             <Activity className="h-7 w-7 text-primary-foreground" />
           </div>
-          <div className="text-slate-500 animate-pulse font-medium">Carregando ClinicFlow...</div>
+          <div className="text-muted-foreground animate-pulse font-medium">
+            Carregando ClinicFlow...
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 transition-all duration-500 ease-in-out">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-100 p-8 animate-in zoom-in-95 duration-500">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 transition-all duration-500 ease-in-out">
+      <div className="w-full max-w-md bg-card rounded-2xl shadow-sm border border-border p-8 animate-in zoom-in-95 duration-500">
         <div className="flex flex-col items-center mb-8">
           <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center mb-4 shadow-md shadow-primary/20">
             <Activity className="h-7 w-7 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-800 transition-all duration-300">
+          <h1 className="text-2xl font-bold text-foreground transition-all duration-300">
             {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
           </h1>
-          <p className="text-slate-500 mt-2 text-sm text-center transition-all duration-300">
+          <p className="text-muted-foreground mt-2 text-sm text-center transition-all duration-300">
             {isLogin
               ? 'Acesse o ClinicFlow para gerenciar seus pacientes.'
               : 'Comece a gerenciar seus leads de forma inteligente.'}
@@ -233,7 +235,7 @@ export default function Login() {
         )}
 
         <div className="mt-6 text-center text-sm">
-          <span className="text-slate-500">
+          <span className="text-muted-foreground">
             {isLogin ? 'Não tem uma conta?' : 'Já tem uma conta?'}
           </span>{' '}
           <button

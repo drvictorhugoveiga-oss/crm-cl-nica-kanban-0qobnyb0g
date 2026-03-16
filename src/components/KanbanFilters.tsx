@@ -82,22 +82,22 @@ export function KanbanFilters() {
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-3 p-4 bg-white border-b border-slate-200 shadow-sm animate-fade-in z-10 relative shrink-0">
+      <div className="flex flex-wrap items-center gap-3 p-4 bg-card border-b border-border shadow-sm animate-fade-in z-10 relative shrink-0">
         <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar nome, telefone, email..."
-            className="pl-9 h-10 w-full rounded-xl focus-visible:ring-primary/50 transition-all duration-300"
+            className="pl-9 h-10 w-full rounded-xl focus-visible:ring-primary/50 transition-all duration-300 bg-background"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
         <Select value={sourceFilter} onValueChange={setSourceFilter}>
-          <SelectTrigger className="w-[160px] h-10 rounded-xl focus:ring-primary/50 transition-all duration-300 bg-white hover:bg-slate-50">
+          <SelectTrigger className="w-[160px] h-10 rounded-xl focus:ring-primary/50 transition-all duration-300 bg-background hover:bg-accent">
             <SelectValue placeholder="Origem" />
           </SelectTrigger>
-          <SelectContent className="rounded-xl shadow-lg border-slate-200">
+          <SelectContent className="rounded-xl shadow-lg border-border">
             <SelectItem value="all">Todas Origens</SelectItem>
             {origins.map((origin) => (
               <SelectItem key={origin.id} value={origin.name} className="cursor-pointer">
@@ -112,7 +112,7 @@ export function KanbanFilters() {
             <Button
               variant="outline"
               className={cn(
-                'h-10 justify-start text-left font-normal w-[240px] rounded-xl transition-all duration-300 bg-white hover:bg-slate-50',
+                'h-10 justify-start text-left font-normal w-[240px] rounded-xl transition-all duration-300 bg-background hover:bg-accent',
                 !dateRange && 'text-muted-foreground',
               )}
             >
@@ -131,10 +131,7 @@ export function KanbanFilters() {
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent
-            className="w-auto p-0 rounded-xl shadow-lg border-slate-200"
-            align="start"
-          >
+          <PopoverContent className="w-auto p-0 rounded-xl shadow-lg border-border" align="start">
             <Calendar
               initialFocus
               mode="range"
@@ -143,6 +140,7 @@ export function KanbanFilters() {
               onSelect={setDateRange}
               numberOfMonths={1}
               locale={ptBR}
+              className="bg-card text-foreground"
             />
           </PopoverContent>
         </Popover>
@@ -151,13 +149,13 @@ export function KanbanFilters() {
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
-              className="h-10 w-[160px] justify-between rounded-xl transition-all duration-300 bg-white hover:bg-slate-50"
+              className="h-10 w-[160px] justify-between rounded-xl transition-all duration-300 bg-background hover:bg-accent"
             >
               Etapas ({selectedStages.length > 0 ? selectedStages.length : 'Todas'})
               <Filter className="h-4 w-4 ml-2 opacity-50 shrink-0" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56 rounded-xl shadow-lg border-slate-200">
+          <DropdownMenuContent className="w-56 rounded-xl shadow-lg border-border">
             <DropdownMenuLabel>Filtrar Colunas</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {columns.map((col) => (
@@ -171,7 +169,7 @@ export function KanbanFilters() {
                     setSelectedStages(selectedStages.filter((s) => s !== col.title))
                   }
                 }}
-                className="py-2.5 cursor-pointer rounded-lg"
+                className="py-2.5 cursor-pointer rounded-lg hover:bg-accent"
               >
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: col.color }} />
@@ -189,7 +187,7 @@ export function KanbanFilters() {
               size="icon"
               onClick={clearFilters}
               title="Limpar Filtros"
-              className="h-10 w-10 text-slate-500 hover:text-slate-800 rounded-xl hover:bg-slate-100 transition-all duration-300"
+              className="h-10 w-10 text-muted-foreground hover:text-foreground rounded-xl hover:bg-accent transition-all duration-300"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -200,19 +198,21 @@ export function KanbanFilters() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-10 rounded-xl bg-white hover:bg-slate-50 transition-all duration-300"
+                className="h-10 rounded-xl bg-background hover:bg-accent transition-all duration-300"
               >
                 <FolderOpen className="h-4 w-4 mr-2" /> Salvos ({savedFilters.length})
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64 rounded-xl shadow-lg border-slate-200" align="end">
+            <DropdownMenuContent className="w-64 rounded-xl shadow-lg border-border" align="end">
               {savedFilters.length === 0 ? (
-                <div className="p-4 text-sm text-slate-500 text-center">Nenhum filtro salvo</div>
+                <div className="p-4 text-sm text-muted-foreground text-center">
+                  Nenhum filtro salvo
+                </div>
               ) : (
                 savedFilters.map((filter) => (
                   <div
                     key={filter.id}
-                    className="flex items-center justify-between group px-1 py-1 rounded-md hover:bg-slate-100"
+                    className="flex items-center justify-between group px-1 py-1 rounded-md hover:bg-accent"
                   >
                     <div
                       className="flex-1 cursor-pointer truncate text-sm px-2 py-1.5"
@@ -223,7 +223,7 @@ export function KanbanFilters() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 text-slate-400 opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-50"
+                      className="h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-destructive/10"
                       onClick={(e) => {
                         e.stopPropagation()
                         deleteSavedFilter(filter.id)
@@ -251,7 +251,7 @@ export function KanbanFilters() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-10 rounded-xl bg-white hover:bg-slate-50 transition-all duration-300"
+                className="h-10 rounded-xl bg-background hover:bg-accent transition-all duration-300"
                 disabled={isExporting}
               >
                 {isExporting ? (
@@ -262,16 +262,16 @@ export function KanbanFilters() {
                 Exportar
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="rounded-xl shadow-lg border-slate-200">
+            <DropdownMenuContent align="end" className="rounded-xl shadow-lg border-border">
               <DropdownMenuItem
                 onClick={handleExportCSV}
-                className="cursor-pointer py-2.5 rounded-lg"
+                className="cursor-pointer py-2.5 rounded-lg hover:bg-accent"
               >
                 Exportar para CSV
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={handleExportExcel}
-                className="cursor-pointer py-2.5 rounded-lg"
+                className="cursor-pointer py-2.5 rounded-lg hover:bg-accent"
               >
                 Exportar para Excel
               </DropdownMenuItem>

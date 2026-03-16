@@ -173,6 +173,7 @@ export type Database = {
           created_at: string
           id: string
           lead_id: string
+          updated_at: string
           user_id: string | null
         }
         Insert: {
@@ -180,6 +181,7 @@ export type Database = {
           created_at?: string
           id?: string
           lead_id: string
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
@@ -187,6 +189,7 @@ export type Database = {
           created_at?: string
           id?: string
           lead_id?: string
+          updated_at?: string
           user_id?: string | null
         }
         Relationships: [
@@ -216,6 +219,74 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      saved_filters: {
+        Row: {
+          created_at: string
+          filters: Json
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          filters: Json
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          lead_id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          lead_id: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          lead_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'tasks_lead_id_fkey'
+            columns: ['lead_id']
+            isOneToOne: false
+            referencedRelation: 'leads'
+            referencedColumns: ['id']
+          },
+        ]
       }
     }
     Views: {
@@ -410,10 +481,27 @@ export const Constants = {
 //   content: text (not null)
 //   user_id: uuid (nullable)
 //   created_at: timestamp with time zone (not null, default: now())
+//   updated_at: timestamp with time zone (not null, default: now())
 // Table: profiles
 //   id: uuid (not null)
 //   full_name: text (nullable)
 //   updated_at: timestamp with time zone (nullable, default: now())
+// Table: saved_filters
+//   id: uuid (not null, default: gen_random_uuid())
+//   user_id: uuid (not null)
+//   name: text (not null)
+//   filters: jsonb (not null)
+//   created_at: timestamp with time zone (not null, default: now())
+// Table: tasks
+//   id: uuid (not null, default: gen_random_uuid())
+//   lead_id: uuid (not null)
+//   title: text (not null)
+//   description: text (nullable)
+//   due_date: timestamp with time zone (nullable)
+//   status: text (not null, default: 'pending'::text)
+//   assigned_to: uuid (nullable)
+//   created_at: timestamp with time zone (not null, default: now())
+//   updated_at: timestamp with time zone (not null, default: now())
 
 // --- CONSTRAINTS ---
 // Table: audit_logs
@@ -424,7 +512,7 @@ export const Constants = {
 //   FOREIGN KEY kanban_columns_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
 //   UNIQUE kanban_columns_user_title_unique: UNIQUE (user_id, title)
 // Table: lead_history
-//   CHECK lead_history_action_type_check: CHECK ((action_type = ANY (ARRAY['created'::text, 'moved'::text, 'message_received'::text, 'note_added'::text])))
+//   CHECK lead_history_action_type_check: CHECK ((action_type = ANY (ARRAY['created'::text, 'moved'::text, 'message_received'::text, 'note_added'::text, 'task_created'::text])))
 //   FOREIGN KEY lead_history_lead_id_fkey: FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
 //   PRIMARY KEY lead_history_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY lead_history_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL
@@ -441,6 +529,13 @@ export const Constants = {
 // Table: profiles
 //   FOREIGN KEY profiles_id_fkey: FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
 //   PRIMARY KEY profiles_pkey: PRIMARY KEY (id)
+// Table: saved_filters
+//   PRIMARY KEY saved_filters_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY saved_filters_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+// Table: tasks
+//   FOREIGN KEY tasks_assigned_to_fkey: FOREIGN KEY (assigned_to) REFERENCES auth.users(id) ON DELETE SET NULL
+//   FOREIGN KEY tasks_lead_id_fkey: FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
+//   PRIMARY KEY tasks_pkey: PRIMARY KEY (id)
 
 // --- ROW LEVEL SECURITY POLICIES ---
 // Table: audit_logs
@@ -475,6 +570,14 @@ export const Constants = {
 //     USING: (auth.uid() = id)
 //   Policy "Users can view own profile" (SELECT, PERMISSIVE) roles={public}
 //     USING: (auth.uid() = id)
+// Table: saved_filters
+//   Policy "Users can manage their own saved filters" (ALL, PERMISSIVE) roles={public}
+//     USING: (auth.uid() = user_id)
+//     WITH CHECK: (auth.uid() = user_id)
+// Table: tasks
+//   Policy "Enable all access for authenticated users tasks" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
 
 // --- DATABASE FUNCTIONS ---
 // FUNCTION log_lead_created()
@@ -539,6 +642,19 @@ export const Constants = {
 //   END;
 //   $function$
 //
+// FUNCTION log_task_created()
+//   CREATE OR REPLACE FUNCTION public.log_task_created()
+//    RETURNS trigger
+//    LANGUAGE plpgsql
+//    SECURITY DEFINER
+//   AS $function$
+//   BEGIN
+//       INSERT INTO public.lead_history (lead_id, action_type, description, user_id)
+//       VALUES (NEW.lead_id, 'task_created', NEW.title, NEW.assigned_to);
+//       RETURN NEW;
+//   END;
+//   $function$
+//
 // FUNCTION rls_auto_enable()
 //   CREATE OR REPLACE FUNCTION public.rls_auto_enable()
 //    RETURNS event_trigger
@@ -579,6 +695,8 @@ export const Constants = {
 //   trigger_message_received: CREATE TRIGGER trigger_message_received AFTER INSERT ON public.messages FOR EACH ROW EXECUTE FUNCTION log_message_received()
 // Table: notes
 //   trigger_note_added: CREATE TRIGGER trigger_note_added AFTER INSERT ON public.notes FOR EACH ROW EXECUTE FUNCTION log_note_added()
+// Table: tasks
+//   trigger_task_created: CREATE TRIGGER trigger_task_created AFTER INSERT ON public.tasks FOR EACH ROW EXECUTE FUNCTION log_task_created()
 
 // --- INDEXES ---
 // Table: kanban_columns

@@ -94,7 +94,7 @@ export function NewLeadDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[450px] transition-all duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 w-[95vw] p-5 sm:p-6">
+      <DialogContent className="sm:max-w-[450px] transition-all duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 w-[95vw] p-5 sm:p-6 bg-card">
         <DialogHeader>
           <DialogTitle className="text-xl">Adicionar Novo Lead</DialogTitle>
           <DialogDescription>
@@ -190,7 +190,7 @@ export function NewLeadDialog({
               control={form.control}
               name="lgpd_consent"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl border border-slate-200 bg-slate-50/50 p-4 mt-2 hover:bg-slate-50 transition-all duration-300 ease-in-out cursor-pointer">
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl border border-border bg-muted/50 p-4 mt-2 hover:bg-accent transition-all duration-300 ease-in-out cursor-pointer">
                   <FormControl>
                     <Checkbox
                       checked={field.value}
@@ -211,12 +211,12 @@ export function NewLeadDialog({
               )}
             />
 
-            <DialogFooter className="mt-6 pt-4 border-t border-slate-100 gap-2 sm:gap-0">
+            <DialogFooter className="mt-6 pt-4 border-t border-border gap-2 sm:gap-0">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => handleOpenChange(false)}
-                className="h-11 sm:h-10 w-full sm:w-auto rounded-xl sm:rounded-md transition-all duration-300 ease-in-out hover:bg-slate-100"
+                className="h-11 sm:h-10 w-full sm:w-auto rounded-xl sm:rounded-md transition-all duration-300 ease-in-out hover:bg-accent"
               >
                 Cancelar
               </Button>

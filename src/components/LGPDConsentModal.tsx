@@ -51,12 +51,12 @@ export function LGPDConsentModal() {
             Privacidade e o tratamento de seus dados de acordo com a LGPD.
           </DialogDescription>
         </DialogHeader>
-        <div className="text-sm text-slate-600 mb-2 p-4 bg-slate-50 rounded-xl border border-slate-100 leading-relaxed mt-2">
+        <div className="text-sm text-muted-foreground mb-2 p-4 bg-muted/50 rounded-xl border border-border leading-relaxed mt-2">
           Nós criptografamos os dados sensíveis dos seus pacientes (e-mail, telefone) e registramos
           ações críticas no sistema para fins de auditoria, garantindo a total conformidade com a
           Lei Geral de Proteção de Dados.
         </div>
-        <DialogFooter className="flex-col sm:flex-row gap-3 mt-4 w-full border-t border-slate-100 pt-4">
+        <DialogFooter className="flex-col sm:flex-row gap-3 mt-4 w-full border-t border-border pt-4">
           <Button
             variant="outline"
             onClick={handleDecline}

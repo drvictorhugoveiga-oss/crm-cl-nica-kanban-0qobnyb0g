@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { NewLeadDialog } from './NewLeadDialog'
 import { useAuth } from '@/hooks/use-auth'
 import useWhatsAppStore from '@/stores/useWhatsAppStore'
+import { ModeToggle } from './ModeToggle'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,9 +24,9 @@ export function Header() {
   const unreadCount = chats.reduce((acc, chat) => acc + chat.unread, 0)
 
   return (
-    <header className="h-16 border-b bg-white flex items-center justify-between px-4 sm:px-6 shrink-0 z-20 sticky top-0 shadow-sm transition-all duration-300">
+    <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 sm:px-6 shrink-0 z-20 sticky top-0 shadow-sm transition-all duration-300">
       <div className="flex items-center gap-4 flex-1">
-        <SidebarTrigger className="h-11 w-11 lg:hidden transition-all duration-300 ease-in-out" />
+        <SidebarTrigger className="h-11 w-11 lg:hidden transition-all duration-300 ease-in-out text-muted-foreground hover:text-foreground" />
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">
@@ -45,9 +46,11 @@ export function Header() {
         >
           <MessageCircle className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white animate-in zoom-in" />
+            <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-card animate-in zoom-in" />
           )}
         </Button>
+
+        <ModeToggle />
 
         <Button
           variant="ghost"
@@ -59,24 +62,27 @@ export function Header() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Avatar className="h-10 w-10 sm:h-9 sm:w-9 border cursor-pointer hover:opacity-80 transition-all duration-300 ease-in-out">
+            <Avatar className="h-10 w-10 sm:h-9 sm:w-9 border border-border cursor-pointer hover:opacity-80 transition-all duration-300 ease-in-out">
               <AvatarImage
                 src={`https://img.usecurling.com/ppl/thumbnail?seed=${user?.id || '1'}`}
                 alt={user?.user_metadata?.name || 'User'}
               />
-              <AvatarFallback>
+              <AvatarFallback className="bg-primary/10 text-primary">
                 {user?.user_metadata?.name?.charAt(0).toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 animate-in fade-in slide-in-from-top-2">
+          <DropdownMenuContent
+            align="end"
+            className="w-56 animate-in fade-in slide-in-from-top-2 border-border"
+          >
             <DropdownMenuLabel>{user?.user_metadata?.name || 'Usuário'}</DropdownMenuLabel>
             <DropdownMenuLabel className="text-xs font-normal text-muted-foreground truncate">
               {user?.email}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              className="text-destructive cursor-pointer h-10 sm:h-8 transition-colors duration-200"
+              className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer h-10 sm:h-8 transition-colors duration-200"
               onClick={() => signOut()}
             >
               <LogOut className="h-4 w-4 mr-2" />

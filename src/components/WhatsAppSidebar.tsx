@@ -15,9 +15,9 @@ export function WhatsAppSidebar() {
   const filteredChats = chats.filter((c) => c.leadName.toLowerCase().includes(search.toLowerCase()))
 
   return (
-    <div className="flex flex-col h-full bg-white relative">
-      <div className="h-[72px] sm:h-16 bg-[#F0F2F5] px-4 flex items-center justify-between shrink-0 border-b border-slate-200">
-        <h2 className="font-semibold text-slate-800 flex items-center gap-2 text-lg sm:text-base">
+    <div className="flex flex-col h-full bg-card relative">
+      <div className="h-[72px] sm:h-16 bg-muted dark:bg-secondary px-4 flex items-center justify-between shrink-0 border-b border-border">
+        <h2 className="font-semibold text-foreground flex items-center gap-2 text-lg sm:text-base">
           <div className="h-9 w-9 sm:h-8 sm:w-8 bg-[#25D366] rounded-full flex items-center justify-center shadow-sm shrink-0">
             <MessageCircle className="h-4 w-4 text-white" />
           </div>
@@ -26,26 +26,26 @@ export function WhatsAppSidebar() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-11 w-11 sm:h-10 sm:w-10 text-slate-500 hover:bg-slate-200/60 rounded-full shrink-0"
+          className="h-11 w-11 sm:h-10 sm:w-10 text-muted-foreground hover:bg-accent rounded-full shrink-0"
           onClick={toggleSidebar}
         >
           <X className="h-6 w-6 sm:h-5 sm:w-5" />
         </Button>
       </div>
 
-      <div className="p-3 border-b border-slate-100 bg-white shrink-0">
+      <div className="p-3 border-b border-border/50 bg-card shrink-0">
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 sm:h-4 sm:w-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 sm:h-4 sm:w-4 text-muted-foreground/70" />
           <Input
             placeholder="Pesquisar contatos..."
-            className="pl-10 bg-[#F0F2F5] border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 rounded-xl h-11 sm:h-10 text-[15px] sm:text-sm"
+            className="pl-10 bg-muted dark:bg-slate-800 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 rounded-xl h-11 sm:h-10 text-[15px] sm:text-sm"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
       </div>
 
-      <ScrollArea className="flex-1 bg-white">
+      <ScrollArea className="flex-1 bg-card dark:bg-slate-900">
         <div className="flex flex-col pb-6 sm:pb-0">
           {isLoading && filteredChats.length === 0 ? (
             Array.from({ length: 5 }).map((_, i) => (
@@ -58,17 +58,17 @@ export function WhatsAppSidebar() {
               </div>
             ))
           ) : filteredChats.length === 0 ? (
-            <div className="p-8 text-center text-[15px] sm:text-sm text-slate-500 mt-10">
+            <div className="p-8 text-center text-[15px] sm:text-sm text-muted-foreground mt-10">
               Nenhum contato encontrado com "{search}".
             </div>
           ) : (
             filteredChats.map((chat) => (
               <div
                 key={chat.id}
-                className="flex items-center gap-3 p-3 sm:p-3 hover:bg-[#F5F6F6] cursor-pointer border-b border-slate-50 transition-colors animate-fade-in"
+                className="flex items-center gap-3 p-3 sm:p-3 hover:bg-muted/50 dark:hover:bg-slate-800 cursor-pointer border-b border-border/30 transition-colors animate-fade-in"
                 onClick={() => setActiveChatId(chat.id)}
               >
-                <Avatar className="h-14 w-14 sm:h-12 sm:w-12 shrink-0 border border-slate-100">
+                <Avatar className="h-14 w-14 sm:h-12 sm:w-12 shrink-0 border border-border/50">
                   <AvatarImage src={`https://img.usecurling.com/ppl/thumbnail?seed=${chat.id}`} />
                   <AvatarFallback className="bg-[#128C7E] text-white font-medium text-lg sm:text-base">
                     {chat.leadName.charAt(0)}
@@ -76,20 +76,20 @@ export function WhatsAppSidebar() {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center mb-0.5">
-                    <span className="font-semibold text-slate-800 text-[16px] sm:text-[15px] truncate">
+                    <span className="font-semibold text-foreground text-[16px] sm:text-[15px] truncate">
                       {chat.leadName}
                     </span>
                     <span
                       className={cn(
                         'text-[13px] sm:text-xs whitespace-nowrap',
-                        chat.unread > 0 ? 'text-[#25D366] font-semibold' : 'text-slate-500',
+                        chat.unread > 0 ? 'text-[#25D366] font-semibold' : 'text-muted-foreground',
                       )}
                     >
                       {chat.lastMessageTime}
                     </span>
                   </div>
                   <div className="flex justify-between items-center gap-2">
-                    <p className="text-[15px] sm:text-sm text-slate-500 truncate">
+                    <p className="text-[15px] sm:text-sm text-muted-foreground truncate">
                       {chat.lastMessage}
                     </p>
                     {chat.unread > 0 && (

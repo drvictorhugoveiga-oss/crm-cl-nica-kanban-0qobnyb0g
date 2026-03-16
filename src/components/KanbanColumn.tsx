@@ -101,8 +101,8 @@ export function KanbanColumn({ column }: KanbanColumnProps) {
       onDrop={handleDrop}
       style={{ outlineColor: isOver ? column.color : 'transparent' }}
       className={cn(
-        'flex flex-col min-w-[280px] w-[85vw] sm:w-[320px] max-w-[350px] shrink-0 bg-slate-100/60 rounded-2xl h-full transition-all duration-300 snap-center border border-slate-200/50 ease-in-out relative',
-        isOver && 'bg-slate-200/90 outline-dashed outline-2 outline-offset-2',
+        'flex flex-col min-w-[280px] w-[85vw] sm:w-[320px] max-w-[350px] shrink-0 bg-secondary/40 rounded-2xl h-full transition-all duration-300 snap-center border border-border/50 ease-in-out relative',
+        isOver && 'bg-secondary/60 outline-dashed outline-2 outline-offset-2 dark:outline-offset-1',
       )}
     >
       <div
@@ -111,16 +111,16 @@ export function KanbanColumn({ column }: KanbanColumnProps) {
           e.dataTransfer.setData('type', 'column')
           e.dataTransfer.setData('colId', column.id)
         }}
-        className="flex items-center justify-between p-4 mb-1 cursor-grab active:cursor-grabbing hover:bg-slate-200/50 rounded-t-2xl transition-colors duration-300 group touch-pan-x"
+        className="flex items-center justify-between p-4 mb-1 cursor-grab active:cursor-grabbing hover:bg-secondary/60 rounded-t-2xl transition-colors duration-300 group touch-pan-x"
       >
         <div className="flex items-center gap-2.5">
           <div
             className="w-3 h-3 rounded-full shadow-sm transition-transform duration-300 group-hover:scale-110"
             style={{ backgroundColor: column.color }}
           />
-          <h3 className="font-semibold text-slate-800 text-[15px] select-none">{column.title}</h3>
+          <h3 className="font-semibold text-foreground text-[15px] select-none">{column.title}</h3>
         </div>
-        <span className="bg-white text-slate-600 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-sm border border-slate-200/60 transition-all duration-300">
+        <span className="bg-card text-foreground px-2.5 py-0.5 rounded-full text-xs font-bold shadow-sm border border-border/60 transition-all duration-300">
           {isLoading && leads.length === 0 ? <Skeleton className="h-3 w-3" /> : columnLeads.length}
         </span>
       </div>
@@ -128,25 +128,31 @@ export function KanbanColumn({ column }: KanbanColumnProps) {
       <div className="flex-1 overflow-y-auto kanban-scroll p-3 pt-0 flex flex-col gap-3 min-h-[150px] touch-pan-y">
         {isLoading && leads.length === 0 && !searchQuery && sourceFilter === 'all' && !dateRange ? (
           <>
-            <div className="rounded-xl border border-slate-200/60 bg-white p-4 shadow-sm animate-pulse">
+            <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm animate-pulse">
               <Skeleton className="h-5 w-3/4 mb-3" />
               <Skeleton className="h-4 w-1/2 mb-2" />
               <Skeleton className="h-4 w-2/3 mb-4" />
             </div>
-            <div className="rounded-xl border border-slate-200/60 bg-white p-4 shadow-sm animate-pulse opacity-70">
+            <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm animate-pulse opacity-70">
               <Skeleton className="h-5 w-2/3 mb-3" />
               <Skeleton className="h-4 w-1/2 mb-2" />
             </div>
           </>
         ) : columnLeads.length === 0 ? (
-          <div className="h-28 rounded-xl border-2 border-dashed border-slate-300/70 flex flex-col items-center justify-center text-center p-4 animate-fade-in bg-white/50 transition-all duration-300 ease-in-out pointer-events-none">
+          <div className="h-28 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center text-center p-4 animate-fade-in bg-card/50 transition-all duration-300 ease-in-out pointer-events-none">
             {searchQuery || sourceFilter !== 'all' || dateRange ? (
               <>
-                <span className="text-sm text-slate-500 font-medium">Nenhum lead encontrado</span>
-                <span className="text-xs text-slate-400 mt-1">Verifique sua busca ou filtros</span>
+                <span className="text-sm text-muted-foreground font-medium">
+                  Nenhum lead encontrado
+                </span>
+                <span className="text-xs text-muted-foreground/70 mt-1">
+                  Verifique sua busca ou filtros
+                </span>
               </>
             ) : (
-              <span className="text-sm text-slate-500 font-medium">Nenhum lead nesta etapa</span>
+              <span className="text-sm text-muted-foreground font-medium">
+                Nenhum lead nesta etapa
+              </span>
             )}
           </div>
         ) : (

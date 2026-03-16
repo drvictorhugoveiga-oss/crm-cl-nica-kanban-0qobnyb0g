@@ -67,7 +67,7 @@ export function ColumnDialog({ open, onOpenChange, editingColumn }: ColumnDialog
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] transition-all duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 w-[95vw] p-5 sm:p-6">
+      <DialogContent className="sm:max-w-[425px] transition-all duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 w-[95vw] p-5 sm:p-6 bg-card">
         <DialogHeader>
           <DialogTitle>{editingColumn ? 'Editar Coluna' : 'Nova Coluna'}</DialogTitle>
         </DialogHeader>
@@ -103,7 +103,7 @@ export function ColumnDialog({ open, onOpenChange, editingColumn }: ColumnDialog
                 <button
                   key={c}
                   onClick={() => setColor(c)}
-                  className={`w-9 h-9 sm:w-8 sm:h-8 rounded-full border-2 transition-all duration-300 ease-in-out hover:scale-110 shadow-sm ${color === c ? 'border-slate-800 scale-110 ring-2 ring-offset-2 ring-slate-200' : 'border-transparent'}`}
+                  className={`w-9 h-9 sm:w-8 sm:h-8 rounded-full border-2 transition-all duration-300 ease-in-out hover:scale-110 shadow-sm ${color === c ? 'border-foreground scale-110 ring-2 ring-offset-2 ring-border' : 'border-transparent'}`}
                   style={{ backgroundColor: c }}
                   type="button"
                 />
@@ -111,7 +111,7 @@ export function ColumnDialog({ open, onOpenChange, editingColumn }: ColumnDialog
             </div>
           </div>
         </div>
-        <DialogFooter className="gap-2 sm:gap-0 mt-4 border-t border-slate-100 pt-4">
+        <DialogFooter className="gap-2 sm:gap-0 mt-4 border-t border-border pt-4">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
