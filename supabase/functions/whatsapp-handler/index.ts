@@ -4,8 +4,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.39.3'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
 }
 
 // Evolution API Configuration
@@ -60,18 +59,17 @@ Deno.serve(async (req: Request) => {
     // Handle Evolution Webhooks
     if (payload.event === 'messages.upsert' || payload.event === 'messages.update') {
       const msgs = payload.data?.messages || (payload.data?.message ? [payload.data.message] : [])
-
+      
       for (const msgData of msgs) {
         if (!msgData) continue
         const remoteJid = msgData.key?.remoteJid || ''
         const fromMe = msgData.key?.fromMe || false
-
+        
         if (remoteJid === 'status@broadcast') continue
-
+        
         const phone = remoteJid.replace('@s.whatsapp.net', '').replace(/\D/g, '')
-        const text =
-          msgData.message?.conversation || msgData.message?.extendedTextMessage?.text || ''
-
+        const text = msgData.message?.conversation || msgData.message?.extendedTextMessage?.text || ''
+        
         if (!text) continue
 
         const { data: leads } = await adminClient
@@ -97,8 +95,7 @@ Deno.serve(async (req: Request) => {
     const { action, phone, message } = payload
 
     if (action === 'status') {
-      if (USE_MOCK)
-        return new Response(JSON.stringify({ status: mockState }), { headers: corsHeaders })
+      if (USE_MOCK) return new Response(JSON.stringify({ status: mockState }), { headers: corsHeaders })
 
       const res = await evFetch(`/instance/connectionState/${INSTANCE_NAME}`)
       const state = res.data?.instance?.state || res.data?.state || 'disconnected'
@@ -112,16 +109,11 @@ Deno.serve(async (req: Request) => {
     if (action === 'start') {
       if (USE_MOCK) {
         mockState = 'qr'
-        setTimeout(() => {
-          mockState = 'connected'
-        }, 6000)
-        return new Response(
-          JSON.stringify({
-            status: 'qr',
-            qr: 'https://img.usecurling.com/p/300/300?q=qr%20code&color=black',
-          }),
-          { headers: corsHeaders },
-        )
+        setTimeout(() => { mockState = 'connected' }, 6000)
+        return new Response(JSON.stringify({ 
+          status: 'qr', 
+          qr: 'https://img.usecurling.com/p/300/300?q=qr%20code&color=black' 
+        }), { headers: corsHeaders })
       }
 
       // 1. Check existing state
@@ -135,7 +127,7 @@ Deno.serve(async (req: Request) => {
         await evFetch('/instance/create', 'POST', {
           instanceName: INSTANCE_NAME,
           qrcode: true,
-          integration: 'WHATSAPP-BAILEYS',
+          integration: "WHATSAPP-BAILEYS",
         })
 
         // 3. Set Webhook
@@ -144,17 +136,15 @@ Deno.serve(async (req: Request) => {
             enabled: true,
             url: webhookUrl,
             byEvents: false,
-            events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
-          },
+            events: ["MESSAGES_UPSERT", "CONNECTION_UPDATE"]
+          }
         })
       }
 
       // 4. Get QR Code
       const connectRes = await evFetch(`/instance/connect/${INSTANCE_NAME}`)
       if (connectRes.data?.base64) {
-        return new Response(JSON.stringify({ status: 'qr', qr: connectRes.data.base64 }), {
-          headers: corsHeaders,
-        })
+        return new Response(JSON.stringify({ status: 'qr', qr: connectRes.data.base64 }), { headers: corsHeaders })
       } else if (connectRes.data?.instance?.state === 'open') {
         return new Response(JSON.stringify({ status: 'connected' }), { headers: corsHeaders })
       }
@@ -181,29 +171,20 @@ Deno.serve(async (req: Request) => {
         direction: 'outgoing',
         read: true,
       })
-      if (insertError)
-        await adminClient
-          .from('messages')
-          .insert({ phone, message_text: message, direction: 'outgoing', read: true })
+      if (insertError) await adminClient.from('messages').insert({ phone, message_text: message, direction: 'outgoing', read: true })
 
       if (!USE_MOCK) {
         await evFetch(`/message/sendText/${INSTANCE_NAME}`, 'POST', {
           number: phone,
-          text: message,
+          text: message
         })
       }
 
       return new Response(JSON.stringify({ status: 'sent' }), { headers: corsHeaders })
     }
 
-    return new Response(JSON.stringify({ error: 'Invalid action' }), {
-      status: 400,
-      headers: corsHeaders,
-    })
+    return new Response(JSON.stringify({ error: 'Invalid action' }), { status: 400, headers: corsHeaders })
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: corsHeaders,
-    })
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders })
   }
 })
