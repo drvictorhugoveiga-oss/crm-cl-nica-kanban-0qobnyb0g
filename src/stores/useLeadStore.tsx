@@ -66,7 +66,9 @@ export function LeadProvider({ children }: { children: ReactNode }) {
             setLeads((prev) => (prev.length === 0 ? parsed : prev))
             hasCache = true
           }
-        } catch (e) {}
+        } catch (e) {
+          // ignore cache parse error
+        }
       }
 
       if (!hasCache) setIsLoading(true)
@@ -104,7 +106,9 @@ export function LeadProvider({ children }: { children: ReactNode }) {
           setLeads(parsedLeads)
           try {
             localStorage.setItem(CACHE_KEY, JSON.stringify(parsedLeads))
-          } catch (e) {}
+          } catch (e) {
+            /* ignore */
+          }
         }
 
         setOrigins([

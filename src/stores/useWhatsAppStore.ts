@@ -55,7 +55,9 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
             setMessages((prev) => (prev.length === 0 ? parsed : prev))
             hasCache = true
           }
-        } catch (e) {}
+        } catch (e) {
+          // ignore cache parse error
+        }
       }
 
       if (!hasCache) setIsLoading(true)
@@ -79,7 +81,9 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
           setMessages(data as Message[])
           try {
             localStorage.setItem(CACHE_KEY, JSON.stringify(data))
-          } catch (e) {}
+          } catch (e) {
+            /* ignore */
+          }
         }
       } finally {
         if (!controller.signal.aborted) setIsLoading(false)
