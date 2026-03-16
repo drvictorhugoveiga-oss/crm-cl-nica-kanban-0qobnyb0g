@@ -1,9 +1,8 @@
 {
   "_versions": {
-    "whatsapp-handler": 3,
+    "whatsapp-handler": 5,
     "lgpd-encryption-handler": 3,
-    "functions": 4,
     "history-automation-handler": 1,
-    "follow-up-automation-handler": 1
+    "follow-up-automation-handler": 2
   }
 }

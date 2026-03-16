@@ -30,12 +30,13 @@ export function AutomationSettings() {
             return
           }
           if (data) {
-            // @ts-expect-error - Supabase types might not have these columns yet on the frontend
-            if (data.follow_up_enabled !== undefined && data.follow_up_enabled !== null)
+            // We use type casting as the database might have these fields although TypeScript types might not be perfectly synced
+            if (data.follow_up_enabled !== undefined && data.follow_up_enabled !== null) {
               setEnabled(data.follow_up_enabled)
-            // @ts-expect-error
-            if (data.follow_up_template !== undefined && data.follow_up_template !== null)
+            }
+            if (data.follow_up_template !== undefined && data.follow_up_template !== null) {
               setTemplate(data.follow_up_template)
+            }
           }
         })
     }
@@ -47,8 +48,8 @@ export function AutomationSettings() {
     const { error } = await supabase
       .from('profiles')
       .update({
-        // @ts-expect-error - new columns
         follow_up_enabled: enabled,
+        follow_up_template: template,
       })
       .eq('id', user.id)
 
@@ -74,7 +75,7 @@ export function AutomationSettings() {
         </div>
       </CardHeader>
       <CardContent className="max-w-2xl space-y-6">
-        <div className="flex items-center justify-between rounded-lg border p-4 shadow-sm bg-slate-50/50">
+        <div className="flex items-center justify-between rounded-lg border p-4 shadow-sm bg-slate-50/50 transition-colors hover:bg-slate-100/50">
           <div className="space-y-0.5">
             <Label className="text-base font-medium">Follow-up de 3 dias</Label>
             <p className="text-sm text-muted-foreground pr-4">
@@ -86,11 +87,12 @@ export function AutomationSettings() {
         </div>
 
         <div className="space-y-3 bg-white p-4 rounded-lg border shadow-sm">
-          <Label className="text-sm font-medium">Template da Mensagem (Somente Leitura)</Label>
+          <Label className="text-sm font-medium">Template da Mensagem</Label>
           <Textarea
             value={template}
-            readOnly
-            className="min-h-[100px] bg-slate-50 text-slate-600 resize-none cursor-not-allowed border-slate-200"
+            onChange={(e) => setTemplate(e.target.value)}
+            className="min-h-[100px] resize-none border-slate-200 focus-visible:ring-primary/50 transition-all duration-300"
+            placeholder="Digite a mensagem de follow-up..."
           />
           <p className="text-xs text-muted-foreground bg-blue-50 text-blue-700 p-2 rounded-md">
             A tag <strong className="font-semibold">[Name]</strong> será substituída automaticamente
@@ -101,7 +103,7 @@ export function AutomationSettings() {
         <Button
           onClick={handleSave}
           disabled={isLoading}
-          className="w-full sm:w-auto transition-all duration-300"
+          className="w-full sm:w-auto transition-all duration-300 ease-in-out"
         >
           {isLoading ? 'Salvando...' : 'Salvar Alterações'}
         </Button>
