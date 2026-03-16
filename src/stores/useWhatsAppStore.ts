@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react'
+import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import useLeadStore from './useLeadStore'
 import { fetchWithRetry } from '@/lib/fetch-with-retry'
@@ -41,10 +41,23 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false)
   const { leads } = useLeadStore()
 
+  const phoneNumbersStr = useMemo(() => {
+    return [...new Set(leads.map((l) => l.phone?.replace(/\D/g, '')).filter(Boolean))]
+      .sort()
+      .join(',')
+  }, [leads])
+
   useEffect(() => {
     const controller = new AbortController()
 
     const fetchMessages = async () => {
+      const phones = phoneNumbersStr ? phoneNumbersStr.split(',') : []
+      if (phones.length === 0) {
+        setMessages([])
+        setIsLoading(false)
+        return
+      }
+
       const CACHE_KEY = 'crm_messages_cache'
       let hasCache = false
       const cachedStr = localStorage.getItem(CACHE_KEY)
@@ -52,8 +65,12 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
         try {
           const parsed = JSON.parse(cachedStr)
           if (Array.isArray(parsed)) {
-            setMessages((prev) => (prev.length === 0 ? parsed : prev))
-            hasCache = true
+            const cachedPhones = [...new Set(parsed.map((m: any) => m.phone))]
+            const isSubset = cachedPhones.every((p) => typeof p === 'string' && phones.includes(p))
+            if (isSubset) {
+              setMessages((prev) => (prev.length === 0 ? parsed : prev))
+              hasCache = true
+            }
           }
         } catch (e) {
           // ignore cache parse error
@@ -64,7 +81,12 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
 
       try {
         const queryFn = async () => {
-          const q = supabase.from('messages').select('*').order('timestamp', { ascending: true })
+          const q = supabase
+            .from('messages')
+            .select('*')
+            .in('phone', phones)
+            .order('timestamp', { ascending: true })
+
           q.abortSignal(controller.signal)
           return await q
         }
@@ -97,10 +119,14 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
 
     fetchMessages()
 
+    const phones = phoneNumbersStr ? phoneNumbersStr.split(',') : []
     const subscription = supabase
       .channel('messages_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => {
-        if (!controller.signal.aborted) fetchMessages()
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => {
+        const newMsg = payload.new as Message
+        if (newMsg && phones.includes(newMsg.phone)) {
+          if (!controller.signal.aborted) fetchMessages()
+        }
       })
       .subscribe()
 
@@ -108,7 +134,7 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
       controller.abort()
       subscription.unsubscribe()
     }
-  }, [])
+  }, [phoneNumbersStr])
 
   const toggleSidebar = () => setIsOpen((prev) => !prev)
 
@@ -145,12 +171,12 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
 
   const chatsMap = new Map<string, Chat>()
   leads.forEach((lead) => {
-    const digits = lead.phone.replace(/\D/g, '')
+    const digits = lead.phone?.replace(/\D/g, '') || lead.phone
     if (digits)
       chatsMap.set(digits, {
         id: digits,
         leadName: lead.name,
-        phone: lead.phone,
+        phone: lead.phone || '',
         lastMessage: '',
         lastMessageTime: '',
         unread: 0,
@@ -161,7 +187,7 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
   messages.forEach((msg) => {
     const phone = msg.phone
     const existing = chatsMap.get(phone)
-    const leadMatch = leads.find((l) => l.phone.replace(/\D/g, '') === phone)
+    const leadMatch = leads.find((l) => (l.phone?.replace(/\D/g, '') || l.phone) === phone)
     const leadName = leadMatch ? leadMatch.name : phone
     const time = new Date(msg.timestamp).toLocaleTimeString([], {
       hour: '2-digit',
