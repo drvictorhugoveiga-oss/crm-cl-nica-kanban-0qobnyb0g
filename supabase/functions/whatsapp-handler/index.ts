@@ -4,8 +4,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.39.3'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
 }
 
 Deno.serve(async (req: Request) => {
@@ -89,7 +88,7 @@ Deno.serve(async (req: Request) => {
     // Handles real webhooks from WhatsApp providers
     if (action === 'webhook_incoming') {
       if (!phone || !message) throw new Error('Phone and message required for webhook.')
-
+      
       await adminClient.from('messages').insert({
         phone,
         message_text: message,
