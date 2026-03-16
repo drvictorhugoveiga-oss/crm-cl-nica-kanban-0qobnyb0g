@@ -6,38 +6,31 @@ export async function fetchWithRetry<T>(
 ): Promise<{ data: T | null; error: any }> {
   for (let i = 0; i < retries; i++) {
     if (signal?.aborted) {
-      return {
-        data: null,
-        error: { name: 'AbortError', message: 'signal is aborted without reason' },
-      }
+      return { data: null, error: { name: 'AbortError', message: 'Aborted' } }
     }
 
     try {
       const result = await queryFn()
 
+      if (signal?.aborted) {
+        return { data: null, error: { name: 'AbortError', message: 'Aborted' } }
+      }
+
       if (result.error) {
-        const msg = result.error.message || ''
+        const msg = result.error.message?.toLowerCase() || ''
         const code = result.error.code || ''
+        const name = result.error.name || ''
 
         if (
-          result.error.name === 'AbortError' ||
-          signal?.aborted ||
-          msg.includes('Aborted') ||
-          msg.includes('aborted without reason') ||
+          name === 'AbortError' ||
+          msg.includes('abort') ||
+          msg.includes('http n/a') ||
           code === '20'
         ) {
-          return {
-            data: null,
-            error: { name: 'AbortError', message: 'signal is aborted without reason' },
-          }
+          return { data: null, error: { name: 'AbortError', message: 'Aborted' } }
         }
 
-        if (
-          msg.includes('Failed to fetch') ||
-          msg.includes('HTTP N/A') ||
-          msg.includes('Load failed') ||
-          code === '503'
-        ) {
+        if (msg.includes('failed to fetch') || msg.includes('load failed') || code === '503') {
           if (i < retries - 1) {
             await new Promise((res) => setTimeout(res, baseDelay * (i + 1)))
             continue
@@ -47,33 +40,25 @@ export async function fetchWithRetry<T>(
 
       return result
     } catch (err: any) {
-      const msg = err?.message || ''
-      if (
-        signal?.aborted ||
-        err?.name === 'AbortError' ||
-        msg.includes('Aborted') ||
-        msg.includes('aborted without reason')
-      ) {
-        return {
-          data: null,
-          error: { name: 'AbortError', message: 'signal is aborted without reason' },
-        }
-      }
+      const msg = err?.message?.toLowerCase() || ''
+      const name = err?.name || ''
 
       if (
-        msg.includes('Failed to fetch') ||
-        msg.includes('HTTP N/A') ||
-        msg.includes('Load failed') ||
-        err?.name === 'TypeError'
+        signal?.aborted ||
+        name === 'AbortError' ||
+        msg.includes('abort') ||
+        msg.includes('http n/a')
       ) {
+        return { data: null, error: { name: 'AbortError', message: 'Aborted' } }
+      }
+
+      if (msg.includes('failed to fetch') || msg.includes('load failed') || name === 'TypeError') {
         if (i < retries - 1) {
           await new Promise((res) => setTimeout(res, baseDelay * (i + 1)))
           continue
         }
       }
 
-      // Instead of throwing an unhandled rejection, return the error
-      // so the caller can handle it cleanly.
       return { data: null, error: err }
     }
   }

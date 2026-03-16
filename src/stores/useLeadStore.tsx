@@ -5,6 +5,7 @@ import React, {
   ReactNode,
   useEffect,
   useCallback,
+  useRef,
 } from 'react'
 import { Lead, LeadStage, LeadOrigin } from '@/types'
 import { supabase } from '@/lib/supabase/client'
@@ -20,7 +21,7 @@ interface LeadStore {
   setSearchQuery: (query: string) => void
   sourceFilter: string
   setSourceFilter: (source: string) => void
-  fetchLeads: (signal?: AbortSignal) => Promise<void>
+  fetchLeads: () => Promise<void>
   addLead: (lead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>) => Promise<void>
   updateLeadStage: (id: string, newStage: LeadStage) => Promise<void>
   isLoading: boolean
@@ -52,95 +53,102 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   const [sourceFilter, setSourceFilter] = useState('all')
   const [isLoading, setIsLoading] = useState(false)
 
-  const fetchLeads = useCallback(
-    async (signal?: AbortSignal) => {
-      if (!user?.id) return
-      const CACHE_KEY = `crm_leads_${user.id}`
-      let hasCache = false
+  const abortControllerRef = useRef<AbortController | null>(null)
 
-      const cachedStr = localStorage.getItem(CACHE_KEY)
-      if (cachedStr) {
+  const fetchLeads = useCallback(async () => {
+    if (!user?.id) return
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort('New request initiated')
+    }
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+    const signal = controller.signal
+
+    const CACHE_KEY = `crm_leads_${user.id}`
+    let hasCache = false
+
+    const cachedStr = localStorage.getItem(CACHE_KEY)
+    if (cachedStr) {
+      try {
+        const parsed = JSON.parse(cachedStr)
+        if (Array.isArray(parsed)) {
+          setLeads((prev) => (prev.length === 0 ? parsed : prev))
+          hasCache = true
+        }
+      } catch (e) {
+        // ignore cache parse error
+      }
+    }
+
+    if (!hasCache) setIsLoading(true)
+
+    try {
+      const queryFn = async () => {
+        const q = supabase
+          .from('leads')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+        if (signal) q.abortSignal(signal)
+        return await q
+      }
+
+      const { data, error } = await fetchWithRetry(queryFn, 3, 1000, signal)
+      if (signal.aborted) return
+
+      if (error) {
+        const name = error.name?.toLowerCase() || ''
+        const msg = error.message?.toLowerCase() || ''
+        const isAbortError =
+          name === 'aborterror' ||
+          msg.includes('aborted') ||
+          msg.includes('abort') ||
+          msg.includes('http n/a')
+
+        if (!isAbortError) {
+          toast.error('Erro ao carregar leads: ' + (error.message || 'Erro desconhecido'))
+        }
+        return
+      }
+
+      if (data) {
         try {
-          const parsed = JSON.parse(cachedStr)
-          if (Array.isArray(parsed)) {
-            setLeads((prev) => (prev.length === 0 ? parsed : prev))
-            hasCache = true
+          const { data: decryptedData, error: decryptError } = await supabase.functions.invoke(
+            'lgpd-encryption-handler',
+            {
+              body: { action: 'decrypt', items: data },
+            },
+          )
+          if (signal.aborted) return
+
+          if (decryptError) {
+            const msg = decryptError.message?.toLowerCase() || ''
+            if (!msg.includes('abort') && decryptError.name !== 'AbortError') {
+              console.error('Decryption error:', decryptError)
+            }
           }
-        } catch (e) {
-          // ignore cache parse error
+
+          const parsedLeads = (decryptedData?.result || data).map(mapRowToLead)
+          setLeads(parsedLeads)
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify(parsedLeads))
+          } catch (e) {
+            /* ignore */
+          }
+        } catch (invokeErr: any) {
+          if (signal.aborted) return
+          const msg = invokeErr?.message?.toLowerCase() || ''
+          if (invokeErr?.name === 'AbortError' || msg.includes('abort')) {
+            return
+          }
+          console.error('Decryption invoke failed:', invokeErr)
+          const parsedLeads = data.map(mapRowToLead)
+          setLeads(parsedLeads)
         }
       }
 
-      if (!hasCache) setIsLoading(true)
-
-      try {
-        const queryFn = async () => {
-          const q = supabase
-            .from('leads')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-          if (signal) q.abortSignal(signal)
-          return await q
-        }
-
-        const { data, error } = await fetchWithRetry(queryFn, 3, 1000, signal)
-        if (signal?.aborted) return
-
-        if (error) {
-          const msg = error.message || ''
-          const isAbortError =
-            error.name === 'AbortError' ||
-            msg.includes('Aborted') ||
-            msg.includes('aborted without reason') ||
-            msg.includes('HTTP N/A')
-
-          if (!isAbortError) {
-            toast.error('Erro ao carregar leads: ' + msg)
-          }
-          return
-        }
-
-        if (data) {
-          try {
-            const { data: decryptedData, error: decryptError } = await supabase.functions.invoke(
-              'lgpd-encryption-handler',
-              {
-                body: { action: 'decrypt', items: data },
-              },
-            )
-            if (signal?.aborted) return
-
-            if (decryptError) {
-              const msg = decryptError.message || ''
-              if (!msg.includes('aborted without reason') && !msg.includes('AbortError')) {
-                console.error('Decryption error:', decryptError)
-              }
-            }
-
-            const parsedLeads = (decryptedData?.result || data).map(mapRowToLead)
-            setLeads(parsedLeads)
-            try {
-              localStorage.setItem(CACHE_KEY, JSON.stringify(parsedLeads))
-            } catch (e) {
-              /* ignore */
-            }
-          } catch (invokeErr: any) {
-            const msg = invokeErr?.message || ''
-            if (
-              signal?.aborted ||
-              invokeErr?.name === 'AbortError' ||
-              msg.includes('Aborted') ||
-              msg.includes('aborted without reason')
-            ) {
-              return
-            }
-            console.error('Decryption invoke failed:', invokeErr)
-            const parsedLeads = data.map(mapRowToLead)
-            setLeads(parsedLeads)
-          }
-        }
-
+      if (!signal.aborted) {
         setOrigins([
           { id: '1', name: 'Google Ads', description: 'Google Ads' },
           { id: '2', name: 'Indicação', description: 'Referred' },
@@ -148,33 +156,32 @@ export function LeadProvider({ children }: { children: ReactNode }) {
           { id: '4', name: 'Visita Presencial', description: 'Walk-ins' },
           { id: '5', name: 'WhatsApp', description: 'WhatsApp' },
         ])
-      } catch (err: any) {
-        const msg = err?.message || ''
-        if (
-          signal?.aborted ||
-          err?.name === 'AbortError' ||
-          msg.includes('Aborted') ||
-          msg.includes('aborted without reason') ||
-          msg.includes('HTTP N/A')
-        ) {
-          return
-        }
-        console.error('Unhandled error in fetchLeads:', err)
-      } finally {
-        if (!signal?.aborted) setIsLoading(false)
       }
-    },
-    [user],
-  )
+    } catch (err: any) {
+      if (signal.aborted) return
+      const msg = err?.message?.toLowerCase() || ''
+      if (err?.name === 'AbortError' || msg.includes('abort') || msg.includes('http n/a')) {
+        return
+      }
+      console.error('Unhandled error in fetchLeads:', err)
+    } finally {
+      if (!signal.aborted) setIsLoading(false)
+    }
+  }, [user])
 
   useEffect(() => {
-    const controller = new AbortController()
-    if (user?.id) fetchLeads(controller.signal)
-    else {
+    if (user?.id) {
+      fetchLeads()
+    } else {
       setLeads([])
       setOrigins([])
     }
-    return () => controller.abort()
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort('Component unmounted')
+      }
+    }
   }, [user, fetchLeads])
 
   const addLead = async (newLead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>) => {
