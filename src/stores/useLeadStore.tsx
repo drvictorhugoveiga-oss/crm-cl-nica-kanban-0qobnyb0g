@@ -54,7 +54,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
 
   const fetchLeads = useCallback(
     async (signal?: AbortSignal) => {
-      if (!user) return
+      if (!user?.id) return
       const CACHE_KEY = `crm_leads_${user.id}`
       let hasCache = false
 
@@ -74,14 +74,14 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       if (!hasCache) setIsLoading(true)
 
       try {
-        const queryFn = () => {
+        const queryFn = async () => {
           const q = supabase
             .from('leads')
             .select('*')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
           if (signal) q.abortSignal(signal)
-          return q
+          return await q
         }
 
         const { data, error } = await fetchWithRetry(queryFn, 3, 1000, signal)
@@ -95,19 +95,32 @@ export function LeadProvider({ children }: { children: ReactNode }) {
         }
 
         if (data) {
-          const { data: decryptedData } = await supabase.functions.invoke(
-            'lgpd-encryption-handler',
-            {
-              body: { action: 'decrypt', items: data },
-            },
-          )
-          if (signal?.aborted) return
-          const parsedLeads = (decryptedData?.result || data).map(mapRowToLead)
-          setLeads(parsedLeads)
           try {
-            localStorage.setItem(CACHE_KEY, JSON.stringify(parsedLeads))
-          } catch (e) {
-            /* ignore */
+            const { data: decryptedData, error: decryptError } = await supabase.functions.invoke(
+              'lgpd-encryption-handler',
+              {
+                body: { action: 'decrypt', items: data },
+              },
+            )
+            if (signal?.aborted) return
+
+            if (decryptError) {
+              console.error('Decryption error:', decryptError)
+            }
+
+            const parsedLeads = (decryptedData?.result || data).map(mapRowToLead)
+            setLeads(parsedLeads)
+            try {
+              localStorage.setItem(CACHE_KEY, JSON.stringify(parsedLeads))
+            } catch (e) {
+              /* ignore */
+            }
+          } catch (invokeErr: any) {
+            if (signal?.aborted || invokeErr.name === 'AbortError') return
+            console.error('Decryption invoke failed:', invokeErr)
+            // Fallback to raw data if decryption fails
+            const parsedLeads = data.map(mapRowToLead)
+            setLeads(parsedLeads)
           }
         }
 
@@ -118,6 +131,9 @@ export function LeadProvider({ children }: { children: ReactNode }) {
           { id: '4', name: 'Visita Presencial', description: 'Walk-ins' },
           { id: '5', name: 'WhatsApp', description: 'WhatsApp' },
         ])
+      } catch (err: any) {
+        if (signal?.aborted || err.name === 'AbortError') return
+        console.error('Unhandled error in fetchLeads:', err)
       } finally {
         if (!signal?.aborted) setIsLoading(false)
       }
@@ -127,7 +143,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const controller = new AbortController()
-    if (user) fetchLeads(controller.signal)
+    if (user?.id) fetchLeads(controller.signal)
     else {
       setLeads([])
       setOrigins([])
@@ -136,7 +152,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   }, [user, fetchLeads])
 
   const addLead = async (newLead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>) => {
-    if (!user) return
+    if (!user?.id) return
     const rowToInsert = {
       name: newLead.name,
       email: newLead.email,
@@ -169,7 +185,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   }
 
   const updateLeadStage = async (id: string, newStage: LeadStage) => {
-    if (!user) return
+    if (!user?.id) return
     const prevLeads = [...leads]
     setLeads((prev) =>
       prev.map((l) =>

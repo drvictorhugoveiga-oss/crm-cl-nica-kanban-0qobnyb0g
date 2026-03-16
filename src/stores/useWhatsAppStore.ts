@@ -63,17 +63,19 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
       if (!hasCache) setIsLoading(true)
 
       try {
-        const queryFn = () => {
+        const queryFn = async () => {
           const q = supabase.from('messages').select('*').order('timestamp', { ascending: true })
           q.abortSignal(controller.signal)
-          return q
+          return await q
         }
 
         const { data, error } = await fetchWithRetry(queryFn, 3, 1000, controller.signal)
         if (controller.signal.aborted) return
 
         if (error) {
-          console.error('Error loading messages:', error)
+          if (error.name !== 'AbortError' && !error.message?.includes('Aborted')) {
+            console.error('Error loading messages:', error)
+          }
           return
         }
 
@@ -85,6 +87,9 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
             /* ignore */
           }
         }
+      } catch (err: any) {
+        if (controller.signal.aborted || err.name === 'AbortError') return
+        console.error('Unhandled error in fetchMessages:', err)
       } finally {
         if (!controller.signal.aborted) setIsLoading(false)
       }
