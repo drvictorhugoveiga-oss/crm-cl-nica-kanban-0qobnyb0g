@@ -204,16 +204,22 @@ export type Database = {
       }
       profiles: {
         Row: {
+          follow_up_enabled: boolean | null
+          follow_up_template: string | null
           full_name: string | null
           id: string
           updated_at: string | null
         }
         Insert: {
+          follow_up_enabled?: boolean | null
+          follow_up_template?: string | null
           full_name?: string | null
           id: string
           updated_at?: string | null
         }
         Update: {
+          follow_up_enabled?: boolean | null
+          follow_up_template?: string | null
           full_name?: string | null
           id?: string
           updated_at?: string | null
@@ -486,6 +492,8 @@ export const Constants = {
 //   id: uuid (not null)
 //   full_name: text (nullable)
 //   updated_at: timestamp with time zone (nullable, default: now())
+//   follow_up_enabled: boolean (nullable, default: false)
+//   follow_up_template: text (nullable, default: 'Olá [Name], notei que não conversamos nos últimos dias. Gostaria de tirar alguma dúvida pendente?'::text)
 // Table: saved_filters
 //   id: uuid (not null, default: gen_random_uuid())
 //   user_id: uuid (not null)
@@ -512,7 +520,7 @@ export const Constants = {
 //   FOREIGN KEY kanban_columns_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
 //   UNIQUE kanban_columns_user_title_unique: UNIQUE (user_id, title)
 // Table: lead_history
-//   CHECK lead_history_action_type_check: CHECK ((action_type = ANY (ARRAY['created'::text, 'moved'::text, 'message_received'::text, 'note_added'::text, 'task_created'::text])))
+//   CHECK lead_history_action_type_check: CHECK ((action_type = ANY (ARRAY['created'::text, 'moved'::text, 'message_received'::text, 'note_added'::text, 'task_created'::text, 'follow_up_sent'::text])))
 //   FOREIGN KEY lead_history_lead_id_fkey: FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
 //   PRIMARY KEY lead_history_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY lead_history_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL
