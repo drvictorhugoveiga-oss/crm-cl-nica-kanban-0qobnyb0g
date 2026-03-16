@@ -4,7 +4,6 @@ import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { ThemeProvider } from '@/components/theme-provider'
 import Index from './pages/Index'
-import Chat from './pages/Chat'
 import NotFound from './pages/NotFound'
 import Login from './pages/Login'
 import Layout from './components/Layout'
@@ -17,7 +16,6 @@ import Ajuda from './pages/Ajuda'
 import AdminContent from './pages/AdminContent'
 import { LeadProvider } from './stores/useLeadStore'
 import { AuthProvider } from './hooks/use-auth'
-import { WhatsAppProvider } from './stores/useWhatsAppStore'
 import { KanbanProvider } from './stores/useKanbanStore'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
@@ -36,16 +34,13 @@ const App = () => (
                 <ProtectedRoute>
                   <LeadProvider>
                     <KanbanProvider>
-                      <WhatsAppProvider>
-                        <Layout />
-                      </WhatsAppProvider>
+                      <Layout />
                     </KanbanProvider>
                   </LeadProvider>
                 </ProtectedRoute>
               }
             >
               <Route index element={<Index />} />
-              <Route path="chat" element={<Chat />} />
               <Route path="analise-origem" element={<AnaliseOrigem />} />
               <Route path="relatorios" element={<Relatorios />} />
               <Route path="politica-privacidade" element={<PrivacyPolicy />} />

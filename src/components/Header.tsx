@@ -1,11 +1,10 @@
-import { LogOut, Bell, Plus, MessageCircle } from 'lucide-react'
+import { LogOut, Bell, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { useState } from 'react'
 import { NewLeadDialog } from './NewLeadDialog'
 import { useAuth } from '@/hooks/use-auth'
-import useWhatsAppStore from '@/stores/useWhatsAppStore'
 import { ModeToggle } from './ModeToggle'
 import {
   DropdownMenu,
@@ -19,9 +18,6 @@ import {
 export function Header() {
   const { user, signOut } = useAuth()
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const { toggleSidebar, chats } = useWhatsAppStore()
-
-  const unreadCount = chats.reduce((acc, chat) => acc + chat.unread, 0)
 
   return (
     <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 sm:px-6 shrink-0 z-20 sticky top-0 shadow-sm transition-all duration-300">
@@ -36,18 +32,6 @@ export function Header() {
         >
           <Plus className="h-5 w-5 sm:mr-2" />
           <span className="hidden sm:inline">Novo Lead</span>
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:text-[#25D366] hover:bg-[#25D366]/10 relative h-11 w-11 sm:h-10 sm:w-10 rounded-xl transition-all duration-300 ease-in-out"
-          onClick={toggleSidebar}
-        >
-          <MessageCircle className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-card animate-in zoom-in" />
-          )}
         </Button>
 
         <ModeToggle />

@@ -43,21 +43,31 @@ interface LeadStore {
 
 const LeadContext = createContext<LeadStore | undefined>(undefined)
 
-const mapRowToLead = (row: any): Lead & { value?: number; cost?: number } => ({
-  id: row.id,
-  user_id: row.user_id || '',
-  name: row.name,
-  phone: row.phone || '',
-  email: row.email || '',
-  contact_date: row.created_at,
-  origin: row.source,
-  stage: row.status as LeadStage,
-  created_at: row.created_at,
-  updated_at: row.created_at,
-  lgpd_consent: row.lgpd_consent,
-  value: row.value,
-  cost: row.cost,
-})
+const mapRowToLead = (row: any): Lead & { value?: number; cost?: number } => {
+  let stage = row.status as LeadStage
+  // Map old default statuses to proper UI formatting for backward compatibility
+  if (stage === 'novo_contato') stage = 'Novo Contato'
+  if (stage === 'agendado') stage = 'Agendado'
+  if (stage === 'em_atendimento') stage = 'Em Atendimento'
+  if (stage === 'convertido') stage = 'Convertido'
+  if (stage === 'perdido') stage = 'Perdido'
+
+  return {
+    id: row.id,
+    user_id: row.user_id || '',
+    name: row.name,
+    phone: row.phone || '',
+    email: row.email || '',
+    contact_date: row.created_at,
+    origin: row.source,
+    stage,
+    created_at: row.created_at,
+    updated_at: row.created_at,
+    lgpd_consent: row.lgpd_consent,
+    value: row.value,
+    cost: row.cost,
+  }
+}
 
 export function LeadProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
@@ -246,18 +256,15 @@ export function LeadProvider({ children }: { children: ReactNode }) {
 
       if (data) {
         try {
-          const { data: decryptedData, error: decryptError } = await supabase.functions.invoke(
-            'lgpd-encryption-handler',
-            {
-              body: { action: 'decrypt', items: data },
-            },
-          )
+          const res = await supabase.functions.invoke('lgpd-encryption-handler', {
+            body: { action: 'decrypt', items: data },
+          })
           if (signal.aborted) return
 
-          if (decryptError) {
-            const msg = decryptError.message?.toLowerCase() || ''
-            if (!msg.includes('abort') && decryptError.name !== 'AbortError') {
-              console.error('Decryption invoke error:', decryptError)
+          if (res.error) {
+            const msg = res.error.message?.toLowerCase() || ''
+            if (!msg.includes('abort') && res.error.name !== 'AbortError') {
+              console.warn('Decryption invoke error:', res.error)
               toast({
                 title: 'Aviso de Segurança',
                 description:
@@ -267,7 +274,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
             }
           }
 
-          const parsedLeads = (decryptedData?.result || data).map(mapRowToLead)
+          const parsedLeads = (res.data?.result || data).map(mapRowToLead)
           setLeads(parsedLeads)
           try {
             localStorage.setItem(CACHE_KEY, JSON.stringify(parsedLeads))
@@ -280,7 +287,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
           if (invokeErr?.name === 'AbortError' || msg.includes('abort')) {
             return
           }
-          console.error('Decryption invoke failed globally:', invokeErr)
+          console.warn('Decryption invoke failed globally:', invokeErr)
           toast({
             title: 'Aviso de Segurança',
             description: 'Não foi possível conectar ao serviço de criptografia (LGPD).',
@@ -345,15 +352,12 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     let payloadToInsert = rowToInsert
 
     try {
-      const { data: encryptedData, error: encryptError } = await supabase.functions.invoke(
-        'lgpd-encryption-handler',
-        {
-          body: { action: 'encrypt', items: [rowToInsert] },
-        },
-      )
+      const res = await supabase.functions.invoke('lgpd-encryption-handler', {
+        body: { action: 'encrypt', items: [rowToInsert] },
+      })
 
-      if (encryptError) {
-        console.error('Encryption function error:', encryptError)
+      if (res.error) {
+        console.error('Encryption function error:', res.error)
         toast({
           title: 'Erro de Segurança (LGPD)',
           description: 'Falha ao criptografar os dados do paciente. Ação bloqueada.',
@@ -362,7 +366,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
         throw new Error('Encryption failed. Refusing to insert raw PII data.')
       }
 
-      if (!encryptedData?.result || !encryptedData.result[0]) {
+      if (!res.data?.result || !res.data.result[0]) {
         toast({
           title: 'Erro de Segurança',
           description: 'A resposta do serviço de criptografia foi inválida.',
@@ -371,7 +375,7 @@ export function LeadProvider({ children }: { children: ReactNode }) {
         throw new Error('Invalid encryption response.')
       }
 
-      payloadToInsert = encryptedData.result[0]
+      payloadToInsert = res.data.result[0]
     } catch (err) {
       console.error('Error in encryption pipeline:', err)
       throw err // Stop execution, do not save unencrypted data

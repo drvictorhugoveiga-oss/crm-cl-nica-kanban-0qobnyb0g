@@ -14,7 +14,6 @@ import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
-import useWhatsAppStore from '@/stores/useWhatsAppStore'
 import { AISuggestion } from '@/types'
 
 interface SuggestionWithLead extends AISuggestion {
@@ -28,7 +27,6 @@ export function AIInsightsPanel() {
   const [suggestions, setSuggestions] = useState<SuggestionWithLead[]>([])
   const [loading, setLoading] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
-  const { setActiveChatId, isOpen, toggleSidebar } = useWhatsAppStore()
 
   const fetchSuggestions = async () => {
     setLoading(true)
@@ -65,18 +63,18 @@ export function AIInsightsPanel() {
   const handleAnalyze = async () => {
     setAnalyzing(true)
     try {
-      const { data, error } = await supabase.functions.invoke('gemini-analysis-handler')
+      const res = await supabase.functions.invoke('gemini-analysis-handler')
 
-      if (error) {
-        console.warn('Edge Function Error (Gemini):', error.message || error)
+      if (res.error) {
+        console.warn('Edge Function Error (Gemini):', res.error.message || res.error)
         toast.error(
           'Serviço de IA temporariamente indisponível. A funcionalidade será restaurada em breve.',
         )
         return
       }
 
-      if (data?.error) {
-        console.warn('Gemini Analysis Error:', data.error)
+      if (res.data?.error) {
+        console.warn('Gemini Analysis Error:', res.data.error)
         toast.error('Erro ao gerar insights. Verifique se há dados suficientes.')
         return
       }
@@ -92,12 +90,6 @@ export function AIInsightsPanel() {
   }
 
   const handleApplyAction = async (suggestion: SuggestionWithLead) => {
-    if (suggestion.lead_id && suggestion.leads?.phone) {
-      const phoneDigits = suggestion.leads.phone.replace(/\D/g, '')
-      setActiveChatId(phoneDigits)
-      if (!isOpen) toggleSidebar()
-    }
-
     try {
       const { error } = await supabase
         .from('ai_suggestions' as any)

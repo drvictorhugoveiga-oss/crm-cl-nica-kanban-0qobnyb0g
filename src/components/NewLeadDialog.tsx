@@ -74,7 +74,7 @@ export function NewLeadDialog({
         phone: data.phone,
         email: data.email,
         origin: data.origin,
-        stage: 'novo_contato', // Note: this will be mapped to the first column if missing
+        stage: 'Novo Contato', // Matched with the default kanban column name
         contact_date: new Date().toISOString().split('T')[0],
         lgpd_consent: data.lgpd_consent,
       })
