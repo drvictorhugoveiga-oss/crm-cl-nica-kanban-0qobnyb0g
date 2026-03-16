@@ -197,18 +197,33 @@ export function LeadProvider({ children }: { children: ReactNode }) {
 
   const updateLeadStage = async (id: string, newStage: LeadStage) => {
     if (!user?.id) return
+
+    const leadToUpdate = leads.find((l) => l.id === id)
+    if (!leadToUpdate || leadToUpdate.stage === newStage) return
+
     const prevLeads = [...leads]
+
+    // Optimistic UI Update
     setLeads((prev) =>
       prev.map((l) =>
         l.id === id ? { ...l, stage: newStage, updated_at: new Date().toISOString() } : l,
       ),
     )
-    const { error } = await supabase.from('leads').update({ status: newStage }).eq('id', id)
+
+    // Execute update respecting data integrity and user permissions
+    const { error } = await supabase
+      .from('leads')
+      .update({ status: newStage })
+      .eq('id', id)
+      .eq('user_id', user.id)
+
     if (error) {
+      // Revert optimistic update
       setLeads(prevLeads)
       toast.error('Erro ao atualizar status do lead.')
       return
     }
+
     toast.success('Status atualizado!', { duration: 2500, position: 'bottom-right' })
     await logAudit(user.id, 'Updated Lead Stage', { lead_id: id, new_stage: newStage })
   }

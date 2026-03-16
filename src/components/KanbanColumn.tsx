@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { LeadStage } from '@/types'
 import { KanbanCard } from './KanbanCard'
 import useLeadStore from '@/stores/useLeadStore'
@@ -14,6 +14,7 @@ interface KanbanColumnProps {
 export function KanbanColumn({ id, title, colorClass }: KanbanColumnProps) {
   const { leads, updateLeadStage, searchQuery, sourceFilter, isLoading } = useLeadStore()
   const [isOver, setIsOver] = useState(false)
+  const dragCounter = useRef(0)
 
   const columnLeads = leads.filter((lead) => {
     if (lead.stage !== id) return false
@@ -30,19 +31,34 @@ export function KanbanColumn({ id, title, colorClass }: KanbanColumnProps) {
     return matchesSearch && matchesSource
   })
 
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    dragCounter.current++
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsOver(true)
+    }
+  }
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
     if (!isOver) setIsOver(true)
   }
 
-  const handleDragLeave = () => {
-    setIsOver(false)
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    dragCounter.current--
+    if (dragCounter.current <= 0) {
+      dragCounter.current = 0
+      setIsOver(false)
+    }
   }
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
+    dragCounter.current = 0
     setIsOver(false)
+
     const leadId = e.dataTransfer.getData('leadId')
     if (leadId) {
       updateLeadStage(leadId, id)
@@ -51,6 +67,7 @@ export function KanbanColumn({ id, title, colorClass }: KanbanColumnProps) {
 
   return (
     <div
+      onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
