@@ -4,28 +4,23 @@ import { AppSidebar } from './AppSidebar'
 import { Header } from './Header'
 import { LGPDConsentModal } from './LGPDConsentModal'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { cn } from '@/lib/utils'
 
 export default function Layout() {
   const isMobile = useIsMobile()
   const location = useLocation()
-  const isChatFullscreen = location.pathname.includes('/chat') && isMobile
+  const isChat = location.pathname.includes('/chat')
+  const hideFooter = isChat && isMobile
 
   return (
     <SidebarProvider>
       <div className="flex w-full h-[100dvh] overflow-hidden bg-background text-foreground">
         <AppSidebar />
         <main className="flex-1 flex flex-col min-w-0 h-full relative">
-          {!isChatFullscreen && <Header />}
-          <div
-            className={cn(
-              'flex-1 overflow-hidden relative',
-              isChatFullscreen && 'h-full flex flex-col',
-            )}
-          >
+          <Header />
+          <div className="flex-1 overflow-hidden relative flex flex-col">
             <Outlet />
           </div>
-          {!isChatFullscreen && (
+          {!hideFooter && (
             <footer className="h-12 sm:h-10 border-t border-border bg-card/80 backdrop-blur-sm flex items-center justify-center shrink-0 z-20 shadow-[0_-2px_10px_rgba(0,0,0,0.02)] gap-4 sm:gap-6">
               <Link
                 to="/settings"
