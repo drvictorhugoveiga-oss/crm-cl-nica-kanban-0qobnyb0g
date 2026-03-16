@@ -25,7 +25,7 @@ export function Header() {
   return (
     <header className="h-16 border-b bg-white flex items-center justify-between px-4 sm:px-6 shrink-0 z-20 sticky top-0 shadow-sm transition-all duration-300">
       <div className="flex items-center gap-4 flex-1">
-        <SidebarTrigger className="h-11 w-11 md:hidden transition-all duration-300 ease-in-out" />
+        <SidebarTrigger className="h-11 w-11 lg:hidden transition-all duration-300 ease-in-out" />
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">

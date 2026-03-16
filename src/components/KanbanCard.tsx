@@ -1,5 +1,13 @@
 import { Lead } from '@/types'
-import { Calendar, Mail, Phone, MoreHorizontal, Trash2, MessageCircle } from 'lucide-react'
+import {
+  Calendar,
+  Mail,
+  Phone,
+  MoreHorizontal,
+  Trash2,
+  MessageCircle,
+  MoveRight,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -11,6 +19,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
@@ -26,7 +38,7 @@ const ORIGIN_COLORS: Record<string, string> = {
 export function KanbanCard({ lead }: { lead: Lead }) {
   const [isDragging, setIsDragging] = useState(false)
   const { columns } = useKanbanStore()
-  const { deleteLead } = useLeadStore()
+  const { deleteLead, updateLeadStage } = useLeadStore()
 
   const colColor = columns.find((c) => c.title === lead.stage)?.color || '#cbd5e1'
 
@@ -81,14 +93,39 @@ export function KanbanCard({ lead }: { lead: Lead }) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 -mr-2 -mt-1 text-slate-400 hover:text-slate-700 opacity-0 group-hover:opacity-100 transition-all duration-200 ease-in-out focus-visible:opacity-100 data-[state=open]:opacity-100 shrink-0"
+              className="h-8 w-8 sm:h-6 sm:w-6 -mr-2 -mt-1 text-slate-400 hover:text-slate-700 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 ease-in-out focus-visible:opacity-100 data-[state=open]:opacity-100 shrink-0"
             >
-              <MoreHorizontal className="h-4 w-4" />
+              <MoreHorizontal className="h-5 w-5 sm:h-4 sm:w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-36 animate-in fade-in-80 zoom-in-95">
+          <DropdownMenuContent align="end" className="w-48 animate-in fade-in-80 zoom-in-95">
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="py-2.5 sm:py-1.5 cursor-pointer">
+                <MoveRight className="h-4 w-4 mr-2" />
+                Mover para
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="w-44">
+                {columns.map(
+                  (c) =>
+                    c.title !== lead.stage && (
+                      <DropdownMenuItem
+                        key={c.id}
+                        className="py-2.5 sm:py-1.5 cursor-pointer"
+                        onClick={() => updateLeadStage(lead.id, c.title)}
+                      >
+                        <div
+                          className="w-2 h-2 rounded-full mr-2"
+                          style={{ backgroundColor: c.color }}
+                        />
+                        {c.title}
+                      </DropdownMenuItem>
+                    ),
+                )}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
-              className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer transition-colors duration-200"
+              className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer transition-colors duration-200 py-2.5 sm:py-1.5"
               onClick={() => deleteLead(lead.id)}
             >
               <Trash2 className="h-4 w-4 mr-2" />

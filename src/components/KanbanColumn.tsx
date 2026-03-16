@@ -77,7 +77,7 @@ export function KanbanColumn({ column }: KanbanColumnProps) {
       onDrop={handleDrop}
       style={{ outlineColor: isOver ? column.color : 'transparent' }}
       className={cn(
-        'flex flex-col min-w-[300px] w-[85vw] sm:w-[320px] max-w-[350px] shrink-0 bg-slate-100/60 rounded-2xl h-full transition-all duration-300 snap-center border border-slate-200/50 ease-in-out',
+        'flex flex-col min-w-[280px] w-[85vw] sm:w-[320px] max-w-[350px] shrink-0 bg-slate-100/60 rounded-2xl h-full transition-all duration-300 snap-center border border-slate-200/50 ease-in-out',
         isOver && 'bg-slate-200/90 outline-dashed outline-2 outline-offset-2',
       )}
     >
@@ -87,7 +87,7 @@ export function KanbanColumn({ column }: KanbanColumnProps) {
           e.dataTransfer.setData('type', 'column')
           e.dataTransfer.setData('colId', column.id)
         }}
-        className="flex items-center justify-between p-4 mb-1 cursor-grab active:cursor-grabbing hover:bg-slate-200/50 rounded-t-2xl transition-colors duration-300 group"
+        className="flex items-center justify-between p-4 mb-1 cursor-grab active:cursor-grabbing hover:bg-slate-200/50 rounded-t-2xl transition-colors duration-300 group touch-pan-x"
       >
         <div className="flex items-center gap-2.5">
           <div
@@ -101,7 +101,7 @@ export function KanbanColumn({ column }: KanbanColumnProps) {
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto kanban-scroll p-3 pt-0 flex flex-col gap-3 min-h-[150px]">
+      <div className="flex-1 overflow-y-auto kanban-scroll p-3 pt-0 flex flex-col gap-3 min-h-[150px] touch-pan-y">
         {isLoading && leads.length === 0 && !searchQuery && sourceFilter === 'all' ? (
           <>
             <div className="rounded-xl border border-slate-200/60 bg-white p-4 shadow-sm animate-pulse">
