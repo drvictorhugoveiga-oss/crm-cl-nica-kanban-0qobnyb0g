@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { logAudit } from '@/services/audit'
 import { toast } from 'sonner'
+import { fetchWithRetry } from '@/lib/fetch-with-retry'
 
 interface LeadStore {
   leads: Lead[]
@@ -27,7 +28,7 @@ interface LeadStore {
 
 const LeadContext = createContext<LeadStore | undefined>(undefined)
 
-const mapRowToLead = (row: any): Lead => ({
+const mapRowToLead = (row: any): Lead & { value?: number; cost?: number } => ({
   id: row.id,
   user_id: row.user_id || '',
   name: row.name,
@@ -39,6 +40,8 @@ const mapRowToLead = (row: any): Lead => ({
   created_at: row.created_at,
   updated_at: row.created_at,
   lgpd_consent: row.lgpd_consent,
+  value: row.value,
+  cost: row.cost,
 })
 
 export function LeadProvider({ children }: { children: ReactNode }) {
@@ -52,24 +55,40 @@ export function LeadProvider({ children }: { children: ReactNode }) {
   const fetchLeads = useCallback(
     async (signal?: AbortSignal) => {
       if (!user) return
-      setIsLoading(true)
-      try {
-        const query = supabase
-          .from('leads')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
+      const CACHE_KEY = `crm_leads_${user.id}`
+      let hasCache = false
 
-        if (signal) {
-          query.abortSignal(signal)
+      const cachedStr = localStorage.getItem(CACHE_KEY)
+      if (cachedStr) {
+        try {
+          const parsed = JSON.parse(cachedStr)
+          if (Array.isArray(parsed)) {
+            setLeads((prev) => (prev.length === 0 ? parsed : prev))
+            hasCache = true
+          }
+        } catch (e) {}
+      }
+
+      if (!hasCache) setIsLoading(true)
+
+      try {
+        const queryFn = () => {
+          const q = supabase
+            .from('leads')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+          if (signal) q.abortSignal(signal)
+          return q
         }
 
-        const { data, error } = await query
-
+        const { data, error } = await fetchWithRetry(queryFn, 3, 1000, signal)
         if (signal?.aborted) return
 
         if (error) {
-          toast.error('Erro ao carregar leads: ' + error.message)
+          if (error.name !== 'AbortError' && !error.message?.includes('Aborted')) {
+            toast.error('Erro ao carregar leads: ' + error.message)
+          }
           return
         }
 
@@ -80,32 +99,23 @@ export function LeadProvider({ children }: { children: ReactNode }) {
               body: { action: 'decrypt', items: data },
             },
           )
-
           if (signal?.aborted) return
-          const rows = decryptedData?.result || data
-          setLeads(rows.map(mapRowToLead))
+          const parsedLeads = (decryptedData?.result || data).map(mapRowToLead)
+          setLeads(parsedLeads)
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify(parsedLeads))
+          } catch (e) {}
         }
 
         setOrigins([
-          { id: '1', name: 'Google Ads', description: 'Leads from Google Ads campaigns' },
-          { id: '2', name: 'Indicação', description: 'Referred by other patients' },
-          { id: '3', name: 'Redes Sociais', description: 'From Instagram, Facebook, etc' },
+          { id: '1', name: 'Google Ads', description: 'Google Ads' },
+          { id: '2', name: 'Indicação', description: 'Referred' },
+          { id: '3', name: 'Redes Sociais', description: 'Social' },
           { id: '4', name: 'Visita Presencial', description: 'Walk-ins' },
-          { id: '5', name: 'WhatsApp', description: 'Contato via WhatsApp' },
+          { id: '5', name: 'WhatsApp', description: 'WhatsApp' },
         ])
-      } catch (err: any) {
-        if (
-          signal?.aborted ||
-          err.name === 'AbortError' ||
-          err.message?.includes('Failed to fetch')
-        ) {
-          return
-        }
-        toast.error('Erro de conexão ao buscar dados.')
       } finally {
-        if (!signal?.aborted) {
-          setIsLoading(false)
-        }
+        if (!signal?.aborted) setIsLoading(false)
       }
     },
     [user],
@@ -113,22 +123,16 @@ export function LeadProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const controller = new AbortController()
-
-    if (user) {
-      fetchLeads(controller.signal)
-    } else {
+    if (user) fetchLeads(controller.signal)
+    else {
       setLeads([])
       setOrigins([])
     }
-
-    return () => {
-      controller.abort()
-    }
+    return () => controller.abort()
   }, [user, fetchLeads])
 
   const addLead = async (newLead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user) return
-
     const rowToInsert = {
       name: newLead.name,
       email: newLead.email,
@@ -138,63 +142,44 @@ export function LeadProvider({ children }: { children: ReactNode }) {
       lgpd_consent: newLead.lgpd_consent || false,
       user_id: user.id,
     }
-
-    try {
-      const { data: encryptedData } = await supabase.functions.invoke('lgpd-encryption-handler', {
-        body: { action: 'encrypt', items: [rowToInsert] },
-      })
-
-      const encryptedLead = encryptedData?.result?.[0] || rowToInsert
-
-      const { data, error } = await supabase.from('leads').insert(encryptedLead).select().single()
-
-      if (error) {
-        toast.error('Erro ao criar lead: verifique os dados informados.')
-        throw error
+    const { data: encryptedData } = await supabase.functions.invoke('lgpd-encryption-handler', {
+      body: { action: 'encrypt', items: [rowToInsert] },
+    })
+    const { data, error } = await supabase
+      .from('leads')
+      .insert(encryptedData?.result?.[0] || rowToInsert)
+      .select()
+      .single()
+    if (error) throw error
+    if (data) {
+      const inserted = {
+        ...newLead,
+        id: data.id,
+        created_at: data.created_at,
+        updated_at: data.created_at,
       }
-
-      if (data) {
-        const insertedLead = {
-          ...newLead,
-          id: data.id,
-          created_at: data.created_at,
-          updated_at: data.created_at,
-        }
-        setLeads((prev) => [insertedLead, ...prev])
-        toast.success('Lead adicionado com sucesso!')
-        await logAudit(user.id, 'Created Lead', { lead_id: data.id, source: newLead.origin })
-      }
-    } catch (err) {
-      console.error(err)
-      throw err
+      setLeads((prev) => [inserted, ...prev])
+      toast.success('Lead adicionado com sucesso!')
+      await logAudit(user.id, 'Created Lead', { lead_id: data.id, source: newLead.origin })
     }
   }
 
   const updateLeadStage = async (id: string, newStage: LeadStage) => {
     if (!user) return
-
-    const previousLeads = [...leads]
+    const prevLeads = [...leads]
     setLeads((prev) =>
-      prev.map((lead) =>
-        lead.id === id ? { ...lead, stage: newStage, updated_at: new Date().toISOString() } : lead,
+      prev.map((l) =>
+        l.id === id ? { ...l, stage: newStage, updated_at: new Date().toISOString() } : l,
       ),
     )
-
-    try {
-      const { error } = await supabase.from('leads').update({ status: newStage }).eq('id', id)
-      if (error) {
-        setLeads(previousLeads)
-        toast.error('Erro ao atualizar status do lead.')
-        throw error
-      }
-      toast.success('Status atualizado com sucesso!', {
-        duration: 2500,
-        position: 'bottom-right',
-      })
-      await logAudit(user.id, 'Updated Lead Stage', { lead_id: id, new_stage: newStage })
-    } catch (err) {
-      console.error(err)
+    const { error } = await supabase.from('leads').update({ status: newStage }).eq('id', id)
+    if (error) {
+      setLeads(prevLeads)
+      toast.error('Erro ao atualizar status do lead.')
+      return
     }
+    toast.success('Status atualizado!', { duration: 2500, position: 'bottom-right' })
+    await logAudit(user.id, 'Updated Lead Stage', { lead_id: id, new_stage: newStage })
   }
 
   const value = React.useMemo(
@@ -212,7 +197,6 @@ export function LeadProvider({ children }: { children: ReactNode }) {
     }),
     [leads, origins, searchQuery, sourceFilter, fetchLeads, isLoading],
   )
-
   return <LeadContext.Provider value={value}>{children}</LeadContext.Provider>
 }
 

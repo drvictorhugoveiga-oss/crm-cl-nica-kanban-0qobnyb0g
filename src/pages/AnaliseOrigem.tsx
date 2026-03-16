@@ -1,260 +1,160 @@
-import { useState, useEffect, useMemo } from 'react'
-import { PieChart, Pie, Cell, Legend } from 'recharts'
-import { supabase } from '@/lib/supabase/client'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
-import { Loader2 } from 'lucide-react'
-import { useAuth } from '@/hooks/use-auth'
-
-interface LeadData {
-  id: string
-  name: string
-  source: string
-  status: string
-  value: number
-  cost: number
-  created_at: string
-}
+import { useMemo } from 'react'
+import useLeadStore from '@/stores/useLeadStore'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Users, DollarSign, Activity, TrendingUp } from 'lucide-react'
 
 export default function AnaliseOrigem() {
-  const { user } = useAuth()
-  const [timeframe, setTimeframe] = useState('30')
-  const [leads, setLeads] = useState<LeadData[]>([])
-  const [loading, setLoading] = useState(true)
+  const { leads, isLoading } = useLeadStore()
 
-  useEffect(() => {
-    const controller = new AbortController()
+  const stats = useMemo(() => {
+    const total = leads.length
+    const converted = leads.filter((l) => l.stage === 'convertido').length
+    const active = leads.filter((l) =>
+      ['novo_contato', 'agendado', 'em_atendimento'].includes(l.stage),
+    ).length
+    const conversionRate = total > 0 ? ((converted / total) * 100).toFixed(1) : '0.0'
 
-    const fetchLeads = async () => {
-      if (!user) return
-      setLoading(true)
-      const date = new Date()
-      date.setDate(date.getDate() - parseInt(timeframe))
+    // Calculate total values with safe fallbacks
+    const totalValue = leads.reduce((acc, curr: any) => acc + (Number(curr.value) || 0), 0)
+    const totalCost = leads.reduce((acc, curr: any) => acc + (Number(curr.cost) || 0), 0)
+    const roi = totalCost > 0 ? (((totalValue - totalCost) / totalCost) * 100).toFixed(1) : '0.0'
 
-      try {
-        const { data, error } = await supabase
-          .from('leads')
-          .select('*')
-          .eq('user_id', user.id)
-          .gte('created_at', date.toISOString())
-          .abortSignal(controller.signal)
-
-        if (controller.signal.aborted) return
-
-        if (!error && data) {
-          setLeads(data as LeadData[])
-        }
-      } catch (err: any) {
-        if (
-          controller.signal.aborted ||
-          err.name === 'AbortError' ||
-          err.message?.includes('Failed to fetch')
-        ) {
-          return
-        }
-        console.error('Failed to fetch analise origem leads:', err)
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false)
-        }
-      }
-    }
-
-    fetchLeads()
-
-    return () => {
-      controller.abort()
-    }
-  }, [timeframe, user])
-
-  const chartConfig = {
-    Google: { label: 'Google Ads', color: '#4285F4' },
-    Instagram: { label: 'Instagram', color: '#E1306C' },
-    Facebook: { label: 'Facebook', color: '#1877F2' },
-    Referral: { label: 'Indicação', color: '#34A853' },
-    WhatsApp: { label: 'WhatsApp', color: '#25D366' },
-  }
-
-  const processedData = useMemo(() => {
-    const sourceMap: Record<
-      string,
-      { total: number; converted: number; value: number; cost: number }
-    > = {}
-
-    leads.forEach((lead) => {
-      if (!sourceMap[lead.source]) {
-        sourceMap[lead.source] = { total: 0, converted: 0, value: 0, cost: 0 }
-      }
-      sourceMap[lead.source].total += 1
-      if (lead.status === 'converted') {
-        sourceMap[lead.source].converted += 1
-      }
-      sourceMap[lead.source].value += Number(lead.value) || 0
-      sourceMap[lead.source].cost += Number(lead.cost) || 0
-    })
-
-    const metrics = Object.entries(sourceMap)
-      .map(([source, data]) => {
-        const conversionRate = data.total > 0 ? (data.converted / data.total) * 100 : 0
-        const roi =
-          data.cost > 0
-            ? ((data.value - data.cost) / data.cost) * 100
-            : data.value > 0
-              ? Infinity
-              : 0
-        return {
-          source,
-          total: data.total,
-          conversionRate,
-          roi,
-          value: data.value,
-          cost: data.cost,
-        }
-      })
-      .sort((a, b) => b.total - a.total)
-
-    const chart = metrics.map((m) => ({
-      name: m.source,
-      value: m.total,
-      fill: chartConfig[m.source as keyof typeof chartConfig]?.color || '#8884d8',
-    }))
-
-    return { metrics, chart }
+    return { total, converted, active, conversionRate, totalValue, totalCost, roi }
   }, [leads])
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-[#F8FAFC] p-4 sm:p-6 animate-fade-in relative">
+    <div className="p-4 sm:p-6 bg-[#F8FAFC] h-full overflow-y-auto w-full animate-fade-in">
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">Análise de Origem</h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Acompanhe a performance dos canais de aquisição.
-            </p>
-          </div>
-          <div className="w-[180px]">
-            <Select value={timeframe} onValueChange={setTimeframe}>
-              <SelectTrigger className="bg-white shadow-sm border-slate-200">
-                <SelectValue placeholder="Período" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">Últimos 7 dias</SelectItem>
-                <SelectItem value="30">Últimos 30 dias</SelectItem>
-                <SelectItem value="90">Últimos 90 dias</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Dashboard de Análise</h1>
+          <p className="text-slate-500 text-sm mt-1">
+            Acompanhe o desempenho e retorno sobre investimento (ROI) dos seus leads.
+          </p>
         </div>
 
-        {loading ? (
-          <div className="h-[400px] flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : leads.length === 0 ? (
-          <Card className="border-slate-200 shadow-sm">
-            <CardContent className="h-[300px] flex flex-col items-center justify-center text-slate-500">
-              <p>Nenhum lead encontrado para este período.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          {isLoading && leads.length === 0 ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i} className="shadow-sm border-slate-200 animate-pulse">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-20 mb-2" />
+                  <Skeleton className="h-3 w-32" />
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <>
+              <Card className="shadow-sm border-slate-200 transition-all hover:shadow-md animate-fade-in">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-slate-600">
+                    Total de Leads
+                  </CardTitle>
+                  <div className="p-2 bg-blue-100 text-blue-600 rounded-full shrink-0">
+                    <Users className="h-4 w-4" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-slate-800">{stats.total}</div>
+                  <p className="text-xs text-slate-500 mt-1">Leads registrados no sistema</p>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-sm border-slate-200 transition-all hover:shadow-md animate-fade-in">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-slate-600">
+                    Leads Convertidos
+                  </CardTitle>
+                  <div className="p-2 bg-emerald-100 text-emerald-600 rounded-full shrink-0">
+                    <Activity className="h-4 w-4" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-slate-800">{stats.converted}</div>
+                  <p className="text-xs text-slate-500 mt-1">Pacientes conquistados</p>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-sm border-slate-200 transition-all hover:shadow-md animate-fade-in">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-slate-600">
+                    Valor Estimado
+                  </CardTitle>
+                  <div className="p-2 bg-emerald-100 text-emerald-600 rounded-full shrink-0">
+                    <DollarSign className="h-4 w-4" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-slate-800">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                      stats.totalValue,
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">Receita potencial total</p>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-sm border-slate-200 transition-all hover:shadow-md animate-fade-in">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-slate-600">ROI Estimado</CardTitle>
+                  <div className="p-2 bg-purple-100 text-purple-600 rounded-full shrink-0">
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-slate-800">{stats.roi}%</div>
+                  <p className="text-xs text-slate-500 mt-1 truncate">
+                    Retorno sobre os custos (
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                      stats.totalCost,
+                    )}
+                    )
+                  </p>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <Card className="shadow-sm border-slate-200 min-h-[300px] flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-base text-slate-800">Conversão por Origem</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 flex items-center justify-center">
+              {isLoading && leads.length === 0 ? (
+                <Skeleton className="h-48 w-48 rounded-full" />
+              ) : (
+                <p className="text-sm text-slate-400">Gráfico de distribuição (em breve)</p>
+              )}
             </CardContent>
           </Card>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-1 shadow-sm border-slate-200 flex flex-col">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Distribuição de Leads</CardTitle>
-                <CardDescription>Percentual por canal</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col items-center justify-center min-h-[300px]">
-                <ChartContainer config={chartConfig} className="w-full h-full aspect-square">
-                  <PieChart>
-                    <Pie
-                      data={processedData.chart}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={65}
-                      outerRadius={90}
-                      paddingAngle={2}
-                    >
-                      {processedData.chart.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} stroke="transparent" />
-                      ))}
-                    </Pie>
-                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                    <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                  </PieChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
 
-            <Card className="lg:col-span-2 shadow-sm border-slate-200">
-              <CardHeader>
-                <CardTitle className="text-lg">Métricas de Performance</CardTitle>
-                <CardDescription>Detalhamento de conversão e ROI por origem</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead>Origem</TableHead>
-                      <TableHead className="text-right">Quantidade</TableHead>
-                      <TableHead className="text-right">Taxa de Conversão</TableHead>
-                      <TableHead className="text-right">ROI Estimado</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {processedData.metrics.map((row) => (
-                      <TableRow key={row.source}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-2.5 h-2.5 rounded-full"
-                              style={{
-                                backgroundColor:
-                                  chartConfig[row.source as keyof typeof chartConfig]?.color ||
-                                  '#8884d8',
-                              }}
-                            />
-                            {chartConfig[row.source as keyof typeof chartConfig]?.label ||
-                              row.source}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">{row.total}</TableCell>
-                        <TableCell className="text-right">
-                          {row.conversionRate.toFixed(1)}%
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <span
-                            className={
-                              row.roi > 0 ? 'text-emerald-600 font-medium' : 'text-slate-600'
-                            }
-                          >
-                            {row.roi === Infinity ? '∞ (Custo Zero)' : `${row.roi.toFixed(1)}%`}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+          <Card className="shadow-sm border-slate-200 min-h-[300px] flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-base text-slate-800">Evolução de Leads</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 flex items-center justify-center">
+              {isLoading && leads.length === 0 ? (
+                <div className="w-full space-y-4">
+                  <Skeleton className="h-32 w-full" />
+                  <div className="flex justify-between">
+                    <Skeleton className="h-4 w-12" />
+                    <Skeleton className="h-4 w-12" />
+                    <Skeleton className="h-4 w-12" />
+                    <Skeleton className="h-4 w-12" />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-400">Gráfico de linha do tempo (em breve)</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import useLeadStore from './useLeadStore'
+import { fetchWithRetry } from '@/lib/fetch-with-retry'
 
 export interface Message {
   id: string
@@ -28,6 +29,7 @@ interface WhatsAppStore {
   activeChatId: string | null
   setActiveChatId: (id: string | null) => void
   sendMessage: (phone: string, text: string) => Promise<void>
+  isLoading: boolean
 }
 
 const WhatsAppContext = createContext<WhatsAppStore | undefined>(undefined)
@@ -36,20 +38,36 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [activeChatId, setActiveChatIdState] = useState<string | null>(null)
-
+  const [isLoading, setIsLoading] = useState(false)
   const { leads } = useLeadStore()
 
   useEffect(() => {
     const controller = new AbortController()
 
     const fetchMessages = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('messages')
-          .select('*')
-          .order('timestamp', { ascending: true })
-          .abortSignal(controller.signal)
+      const CACHE_KEY = 'crm_messages_cache'
+      let hasCache = false
+      const cachedStr = localStorage.getItem(CACHE_KEY)
+      if (cachedStr) {
+        try {
+          const parsed = JSON.parse(cachedStr)
+          if (Array.isArray(parsed)) {
+            setMessages((prev) => (prev.length === 0 ? parsed : prev))
+            hasCache = true
+          }
+        } catch (e) {}
+      }
 
+      if (!hasCache) setIsLoading(true)
+
+      try {
+        const queryFn = () => {
+          const q = supabase.from('messages').select('*').order('timestamp', { ascending: true })
+          q.abortSignal(controller.signal)
+          return q
+        }
+
+        const { data, error } = await fetchWithRetry(queryFn, 3, 1000, controller.signal)
         if (controller.signal.aborted) return
 
         if (error) {
@@ -59,16 +77,12 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
 
         if (data) {
           setMessages(data as Message[])
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify(data))
+          } catch (e) {}
         }
-      } catch (err: any) {
-        if (
-          controller.signal.aborted ||
-          err.name === 'AbortError' ||
-          err.message?.includes('Failed to fetch')
-        ) {
-          return
-        }
-        console.error('Failed to fetch messages:', err)
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false)
       }
     }
 
@@ -77,9 +91,7 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
     const subscription = supabase
       .channel('messages_channel')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => {
-        if (!controller.signal.aborted) {
-          fetchMessages()
-        }
+        if (!controller.signal.aborted) fetchMessages()
       })
       .subscribe()
 
@@ -116,21 +128,16 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
       read: true,
     }
     setMessages((prev) => [...prev, tempMsg])
-
     const { error } = await supabase.functions.invoke('whatsapp-handler', {
       body: { action: 'send', phone, message: text },
     })
-
-    if (error) {
-      console.error('Failed to send message:', error)
-    }
+    if (error) console.error('Failed to send message:', error)
   }
 
   const chatsMap = new Map<string, Chat>()
-
   leads.forEach((lead) => {
     const digits = lead.phone.replace(/\D/g, '')
-    if (digits) {
+    if (digits)
       chatsMap.set(digits, {
         id: digits,
         leadName: lead.name,
@@ -140,7 +147,6 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
         unread: 0,
         messages: [],
       })
-    }
   })
 
   messages.forEach((msg) => {
@@ -157,17 +163,13 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
       existing.messages.push(msg)
       existing.lastMessage = msg.message_text
       existing.lastMessageTime = time
-      if (msg.direction === 'incoming' && !msg.read) {
-        existing.unread += 1
-      }
-      if (!existing.leadName || existing.leadName === phone) {
-        existing.leadName = leadName
-      }
+      if (msg.direction === 'incoming' && !msg.read) existing.unread += 1
+      if (!existing.leadName || existing.leadName === phone) existing.leadName = leadName
     } else {
       chatsMap.set(phone, {
         id: phone,
-        leadName: leadName,
-        phone: phone,
+        leadName,
+        phone,
         lastMessage: msg.message_text,
         lastMessageTime: time,
         unread: msg.direction === 'incoming' && !msg.read ? 1 : 0,
@@ -186,16 +188,24 @@ export function WhatsAppProvider({ children }: { children: ReactNode }) {
 
   return React.createElement(
     WhatsAppContext.Provider,
-    { value: { isOpen, toggleSidebar, chats, activeChatId, setActiveChatId, sendMessage } },
+    {
+      value: {
+        isOpen,
+        toggleSidebar,
+        chats,
+        activeChatId,
+        setActiveChatId,
+        sendMessage,
+        isLoading,
+      },
+    },
     children,
   )
 }
 
 export function useWhatsAppStore() {
   const context = useContext(WhatsAppContext)
-  if (!context) {
-    throw new Error('useWhatsAppStore must be used within a WhatsAppProvider')
-  }
+  if (!context) throw new Error('useWhatsAppStore must be used within a WhatsAppProvider')
   return context
 }
 
